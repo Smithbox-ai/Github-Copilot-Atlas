@@ -445,14 +445,9 @@ b. Add to the subagent instructions section:
 
 **4. Test Your Integration**
 
-Try invoking your agent:
+Try invoking your agent through Atlas 
 ```
-Let @YourAgent analyze the current database schema
-```
-
-Or through Atlas:
-```
-@Atlas Use YourAgent to optimize our SQL queries in the user service
+Let @YourAgent analyze the current database schema and optimize our SQL queries in the user service
 ```
 
 **5. Document Usage** (Optional)

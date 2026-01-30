@@ -14,6 +14,17 @@ CRITICAL: You receive context from the parent agent including:
 - The phase objective and implementation steps
 - Files that were modified/created
 - The intended behavior and acceptance criteria
+- **Special conventions** (e.g., Expert-Scripter API verification rules, storage patterns, gotchas)
+
+**When reviewing CustomNPC+ scripts** (invoked by Expert-Scripter-subagent):
+- Enforce the 7 conventions passed in the invocation
+- Reference `.github/agents/scripter_data/GOTCHAS.md` for pitfalls (26 common mistakes)
+- Verify EVERY API method exists in source interfaces (IEntity, IPlayer, INPC, etc.)
+- Check storage decision: `getNbt()` for complex data, `getStoredData(key)` for simple values
+- Require explicit null checks for: `getTarget()`, `getSource()`, `createNPC()`, `spawnEntity()`
+- Verify timer cleanup in init/killed/deleted hooks
+- Check key namespacing for collision avoidance
+- Flag heavy operations in tick hooks without throttling
 
 <review_workflow>
 1. **Analyze Changes**: Review the code changes using #changes, #usages, and #problems to understand what was implemented.
@@ -47,6 +58,15 @@ CRITICAL: You receive context from the parent agent including:
 
 **Issues Found:** {if none, say "None"}
 - **[{CRITICAL|MAJOR|MINOR}]** {Issue description with file/line reference}
+
+**CustomNPC+ Script Checks:** {if applicable, verify these}
+- **API Verification**: ✅ All methods verified in source interfaces | ❌ Unverified methods found
+- **Storage Decision**: ✅ Correct (getNbt/getStoredData) | ❌ Wrong method used
+- **Null Safety**: ✅ Checks present | ❌ Missing null checks
+- **Timer Cleanup**: ✅ Cleanup implemented | ❌ Timers leak
+- **Key Namespacing**: ✅ Keys prefixed | ❌ Generic keys used
+- **Tick Performance**: ✅ Throttled | ❌ Heavy operations unthrottled
+- **Gotchas Reference**: {List gotcha numbers avoided/violated}
 
 **Recommendations:**
 - {Specific suggestion for improvement}
