@@ -111,7 +111,7 @@ This repository contains custom agent prompts that work together to handle the c
 
 1. **Clone or download this repository:**
    ```bash
-   git clone https://github.com/YOUR-USERNAME/copilot-atlas.git
+   git clone https://github.com/bigguy345/Github-Copilot-Atlas.git
    ```
 
 2. **Copy agent files to VS Code User prompts directory:**
