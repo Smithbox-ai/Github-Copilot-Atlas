@@ -1,28 +1,72 @@
-# Copilot Atlas
+# Copilot Atlas (Fork)
+
+> **This is a modified fork of [bigguy345/Github-Copilot-Atlas](https://github.com/bigguy345/Github-Copilot-Atlas).** See [Changes from Upstream](#changes-from-upstream) for a summary of modifications.
 
 A multi-agent orchestration system for VS Code Copilot that enables complex software development workflows through intelligent agent delegation and parallel execution.
 
 > Built upon the foundation of [copilot-orchestra](https://github.com/ShepAlderson/copilot-orchestra) by ShepAlderson, with agent naming conventions inspired by [oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode).
 
-> **Note:** Best supported on VS Code Insiders (as of January 2026) for access to the latest agent orchestration features.
+> **Note:** Best supported on VS Code Insiders (as of February 2026) for access to the latest agent orchestration features.
 
 ## Overview
 
 This repository contains custom agent prompts that work together to handle the complete software development lifecycle: **Planning → Implementation → Review → Commit**. The system uses a conductor-delegate pattern where a main orchestrator (Atlas) coordinates specialized subagents to efficiently tackle complex development tasks.
+
+## Changes from Upstream
+
+This fork includes the following modifications compared to the [original repository](https://github.com/bigguy345/Github-Copilot-Atlas):
+
+### Model Upgrades
+
+| Agent | Upstream Model | This Fork |
+|---|---|---|
+| Atlas | Claude Sonnet 4.5 | **Claude Sonnet 4.6** |
+| Prometheus | GPT-5.2 High | **Claude Opus 4.6** |
+| Oracle | GPT-5.2 | **GPT-5.3-Codex** |
+| Sisyphus | Claude Sonnet 4.5 | **Claude Sonnet 4.6** |
+| Explorer | Gemini 3 Flash (Preview) | *unchanged* |
+| Code-Review | GPT-5.2 | **GPT-5.3-Codex** |
+| Frontend-Engineer | Gemini 3 Pro (Preview) | **Gemini 3.1 Pro (Preview)** |
+
+### Agent Enhancements
+
+- **Code-Review-subagent:**
+  - Added **Security Checklist** (injection, auth, secrets, input validation, data exposure, dependencies, CSRF/CORS)
+  - Added **Verification Gates** — mandatory build/test/lint pass before any approval
+  - Added **Cross-Phase Consistency** checks (unique error codes, no orphaned code, consistent naming, DI chain verification)
+  - Added **CustomNPC+ script** review capabilities (API verification, storage decisions, null safety, timer cleanup, key namespacing, tick performance)
+
+- **Sisyphus-subagent:**
+  - Added **Definition of Done** checklist (tests, build, lint, no secrets, edge cases, dependency reporting)
+  - Added **Prohibitions** section (scope enforcement, no architectural changes, no silent dependency additions)
+
+- **Frontend-Engineer-subagent:**
+  - Added **Definition of Done** checklist (tests, build, lint, accessibility, responsive, no secrets)
+  - Added **Prohibitions** section (scope enforcement, no inline styles over design systems, no un-noted dependencies)
+
+- **Oracle-subagent:**
+  - Added **strict output guidelines** — all findings must be factual with file:line references, no evaluative judgments
+  - Added **output examples** showing good vs. bad research output
+
+- **Explorer-subagent:**
+  - Added **Standards Extraction Mode** — automatic discovery of project conventions when exploring for "conventions", "standards", or "patterns"
+
+- **Prometheus:**
+  - Switched from GPT-5.2 to **Claude Opus 4.6** for deeper reasoning during planning
 
 ## Architecture
 
 ### Primary Agents
 
 - **Atlas** (`Atlas.agent.md`) - The ORCHESTRATOR
-  - **Model:** Claude Sonnet 4.5 (copilot)
+  - **Model:** Claude Sonnet 4.6 (copilot)
   - Orchestrates the full development lifecycle
   - Delegates to specialized subagents for research, implementation, and review
   - Manages context conservation and parallel execution
   - Handles phase tracking and user approval gates
 
 - **Prometheus** (`Prometheus.agent.md`) - The AUTONOMOUS PLANNER
-  - **Model:** GPT-5.2 High (if reasoning set to high, check requirements block below)
+  - **Model:** Claude Opus 4.6 (copilot)
   - Researches requirements and analyzes codebases
   - Writes comprehensive TDD-driven implementation plans
   - Automatically hands off to Atlas for execution
@@ -31,17 +75,17 @@ This repository contains custom agent prompts that work together to handle the c
 ### Specialized Subagents
 
 - **Oracle-subagent** (`Oracle-subagent.agent.md`) - THE RESEARCHER
-  - **Model:** GPT-5.2 (copilot)
+  - **Model:** GPT-5.3-Codex (copilot)
   - Gathers comprehensive context about tasks
   - Can delegate to Explorer for large-scope research
-  - Returns structured findings to parent agents
+  - Returns structured findings with strict file:line references
   - Supports parallel research across independent subsystems
 
 - **Sisyphus-subagent** (`Sisyphus-subagent.agent.md`) - THE IMPLEMENTER
-  - **Model:** Claude Sonnet 4.5 (copilot)
+  - **Model:** Claude Sonnet 4.6 (copilot)
   - Executes implementation following strict TDD principles
   - Writes tests first, then minimal code to pass
-  - Handles linting and formatting
+  - Enforces Definition of Done before reporting completion
   - Can be invoked in parallel for disjoint features
 
 - **Explorer-subagent** (`Explorer-subagent.agent.md`) - THE SCOUT
@@ -50,20 +94,21 @@ This repository contains custom agent prompts that work together to handle the c
   - Read-only exploration (no edits/commands)
   - Returns structured results with file lists and analysis
   - MANDATORY parallel search strategy (3-10 simultaneous searches)
+  - Standards Extraction Mode for convention discovery
 
 - **Code-Review-subagent** (`Code-Review-subagent.agent.md`) - THE REVIEWER
-  - **Model:** GPT-5.2 (copilot)
-  - Reviews code for correctness, quality, and test coverage
+  - **Model:** GPT-5.3-Codex (copilot)
+  - Reviews code for correctness, quality, test coverage, and **security**
+  - Mandatory verification gates (build, tests, lint must pass)
   - Returns structured feedback (APPROVED/NEEDS_REVISION/FAILED)
   - Can be invoked in parallel for independent phases
-  - Focus on blocking issues vs nice-to-haves
 
 - **Frontend-Engineer-subagent** (`Frontend-Engineer-subagent.agent.md`) - THE UI/UX SPECIALIST
-  - **Model:** Gemini 3 Pro (Preview) (copilot)
+  - **Model:** Gemini 3.1 Pro (Preview) (copilot)
   - Implements user interfaces, styling, and responsive layouts
   - Expert in modern frontend frameworks and tooling
   - Follows TDD principles for frontend (component tests first)
-  - Focuses on accessibility and responsive design
+  - Enforces accessibility, responsive design, and Definition of Done
 
 ## Key Features
 
@@ -111,7 +156,7 @@ This repository contains custom agent prompts that work together to handle the c
 
 1. **Clone or download this repository:**
    ```bash
-   git clone https://github.com/bigguy345/Github-Copilot-Atlas.git
+   git clone https://github.com/Smithbox-ai/Github-Copilot-Atlas.git
    ```
 
 2. **Copy agent files to VS Code User prompts directory:**
@@ -351,7 +396,7 @@ Add an entry to the README's Specialized Subagents section describing when to us
   }
   ```
   - `customAgentInSubagent.enabled`: Allow subagents to use custom agents defined in a '-agents.md' file like the ones above 
-  - `responsesApiReasoningEffort`: Set to "high" for enhanced reasoning in planning agents (GPT models)
+  - `responsesApiReasoningEffort`: Set to "high" for enhanced reasoning in planning agents
 
 ## Best Practices
 
@@ -497,7 +542,8 @@ SOFTWARE.
 
 ## Acknowledgments
 
-This project builds upon the excellent work of:
+This fork builds upon the excellent work of:
+- **[Github-Copilot-Atlas](https://github.com/bigguy345/Github-Copilot-Atlas)** by [bigguy345](https://github.com/bigguy345) - Original multi-agent orchestration system
 - **[copilot-orchestra](https://github.com/ShepAlderson/copilot-orchestra)** by [ShepAlderson](https://github.com/ShepAlderson) - Foundation and concept for multi-agent orchestration
 - **[oh-my-opencode](https://github.com/code-yeongyu/oh-my-opencode)** by [code-yeongyu](https://github.com/code-yeongyu) - Inspiration for agent naming conventions and templates
 
