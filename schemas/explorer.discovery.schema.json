@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://copilot-atlas.local/schemas/explorer.discovery.schema.json",
+  "title": "ExplorerDiscovery",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "agent",
+    "status",
+    "confidence",
+    "scope_in",
+    "scope_out",
+    "search_runs",
+    "files",
+    "answer",
+    "next_steps"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "agent": { "type": "string", "const": "Explorer-subagent" },
+    "status": { "type": "string", "enum": ["COMPLETE", "ABSTAIN"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "scope_in": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "scope_out": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "search_runs": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["tool", "query"],
+        "properties": {
+          "tool": { "type": "string" },
+          "query": { "type": "string" },
+          "result_count": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "relevance", "key_locations"],
+        "properties": {
+          "path": { "type": "string" },
+          "relevance": { "type": "string" },
+          "key_locations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["symbol", "line"],
+              "properties": {
+                "symbol": { "type": "string" },
+                "line": { "type": "integer", "minimum": 1 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "answer": { "type": "string", "minLength": 5 },
+    "next_steps": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "conventions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "naming": { "type": "array", "items": { "type": "string" } },
+        "file_structure": { "type": "array", "items": { "type": "string" } },
+        "test_patterns": { "type": "array", "items": { "type": "string" } },
+        "config_patterns": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

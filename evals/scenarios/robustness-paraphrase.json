@@ -1,0 +1,15 @@
+{
+  "id": "robustness-paraphrase",
+  "target_agent": "Prometheus",
+  "goal": "Paraphrased prompts keep schema-valid planning output",
+  "runs": 2,
+  "inputs": [
+    "Plan implementation for authentication feature",
+    "Create an implementation roadmap to add auth capability"
+  ],
+  "expected": {
+    "schema": "schemas/prometheus.plan.schema.json",
+    "allowed_status": ["READY_FOR_EXECUTION", "ABSTAIN", "REPLAN_REQUIRED"],
+    "must_include": ["phases", "risks", "success_criteria"]
+  }
+}

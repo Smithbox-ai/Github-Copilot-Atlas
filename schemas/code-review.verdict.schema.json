@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://copilot-atlas.local/schemas/code-review.verdict.schema.json",
+  "title": "CodeReviewVerdict",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "agent",
+    "status",
+    "summary",
+    "confidence",
+    "abstain",
+    "issues",
+    "verification_gates",
+    "security_checks",
+    "next_steps"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "agent": { "type": "string", "const": "Code-Review-subagent" },
+    "status": {
+      "type": "string",
+      "enum": ["APPROVED", "NEEDS_REVISION", "FAILED", "ABSTAIN"]
+    },
+    "summary": { "type": "string", "minLength": 3 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "abstain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_abstaining", "reasons"],
+      "properties": {
+        "is_abstaining": { "type": "boolean" },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["severity", "description", "file"],
+        "properties": {
+          "severity": { "type": "string", "enum": ["CRITICAL", "MAJOR", "MINOR"] },
+          "description": { "type": "string" },
+          "file": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "category": {
+            "type": "string",
+            "enum": ["correctness", "security", "tests", "maintainability", "consistency", "safety_gate"]
+          }
+        }
+      }
+    },
+    "verification_gates": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["build", "tests", "lint_problems"],
+      "properties": {
+        "build": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state"],
+          "properties": {
+            "state": { "type": "string", "enum": ["PASS", "FAIL", "NOT_AVAILABLE"] },
+            "details": { "type": "string" }
+          }
+        },
+        "tests": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state"],
+          "properties": {
+            "state": { "type": "string", "enum": ["PASS", "FAIL", "NOT_AVAILABLE"] },
+            "details": { "type": "string" }
+          }
+        },
+        "lint_problems": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["state"],
+          "properties": {
+            "state": { "type": "string", "enum": ["PASS", "FAIL", "NOT_AVAILABLE"] },
+            "details": { "type": "string" }
+          }
+        }
+      }
+    },
+    "security_checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["injection", "auth", "secrets", "input_validation", "data_exposure", "dependencies"],
+      "properties": {
+        "injection": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] },
+        "auth": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] },
+        "secrets": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] },
+        "input_validation": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] },
+        "data_exposure": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] },
+        "dependencies": { "type": "string", "enum": ["PASS", "FAIL", "N/A"] }
+      }
+    },
+    "next_steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://copilot-atlas.local/schemas/atlas.gate-event.schema.json",
+  "title": "AtlasGateEvent",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "agent",
+    "event_type",
+    "workflow_state",
+    "phase_id",
+    "decision",
+    "confidence",
+    "requires_human_approval",
+    "reason",
+    "next_action"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "agent": { "type": "string", "const": "Atlas" },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "PLAN_GATE",
+        "PREFLECT_GATE",
+        "PHASE_REVIEW_GATE",
+        "HIGH_RISK_APPROVAL_GATE",
+        "COMPLETION_GATE"
+      ]
+    },
+    "workflow_state": {
+      "type": "string",
+      "enum": ["PLANNING", "ACTING", "REVIEWING", "WAITING_APPROVAL", "COMPLETE"]
+    },
+    "phase_id": { "type": ["integer", "null"], "minimum": 1 },
+    "decision": { "type": "string", "enum": ["GO", "REPLAN", "ABSTAIN", "BLOCKED"] },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "requires_human_approval": { "type": "boolean" },
+    "reason": { "type": "string", "minLength": 3 },
+    "safety_checks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["pii_checked", "destructive_action_checked", "scope_checked", "policy_checked"]
+      }
+    },
+    "next_action": { "type": "string", "minLength": 3 }
+  }
+}

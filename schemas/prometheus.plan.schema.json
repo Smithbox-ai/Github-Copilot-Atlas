@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://copilot-atlas.local/schemas/prometheus.plan.schema.json",
+  "title": "PrometheusPlan",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "agent",
+    "status",
+    "task_title",
+    "summary",
+    "confidence",
+    "abstain",
+    "phases",
+    "open_questions",
+    "risks",
+    "success_criteria",
+    "handoff"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "agent": { "type": "string", "const": "Prometheus" },
+    "status": {
+      "type": "string",
+      "enum": ["READY_FOR_EXECUTION", "ABSTAIN", "REPLAN_REQUIRED"]
+    },
+    "task_title": { "type": "string", "minLength": 3 },
+    "summary": { "type": "string", "minLength": 10 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "abstain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_abstaining", "reasons"],
+      "properties": {
+        "is_abstaining": { "type": "boolean" },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "phase_id",
+          "title",
+          "objective",
+          "files",
+          "tests",
+          "steps",
+          "acceptance_criteria",
+          "quality_gates"
+        ],
+        "properties": {
+          "phase_id": { "type": "integer", "minimum": 1 },
+          "title": { "type": "string", "minLength": 3 },
+          "objective": { "type": "string", "minLength": 5 },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path", "action", "reason"],
+              "properties": {
+                "path": { "type": "string", "minLength": 1 },
+                "action": {
+                  "type": "string",
+                  "enum": ["create", "modify", "review", "reference"]
+                },
+                "reason": { "type": "string", "minLength": 3 }
+              }
+            }
+          },
+          "tests": { "type": "array", "items": { "type": "string" } },
+          "steps": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+          "acceptance_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          },
+          "quality_gates": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "enum": ["tests_pass", "lint_clean", "schema_valid", "safety_clear", "human_approved_if_required"]
+            }
+          }
+        }
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["question", "options", "recommendation"],
+        "properties": {
+          "question": { "type": "string" },
+          "options": { "type": "array", "items": { "type": "string" } },
+          "recommendation": { "type": "string" }
+        }
+      }
+    },
+    "risks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["risk", "mitigation"],
+        "properties": {
+          "risk": { "type": "string" },
+          "mitigation": { "type": "string" }
+        }
+      }
+    },
+    "success_criteria": { "type": "array", "items": { "type": "string" } },
+    "handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_agent", "prompt"],
+      "properties": {
+        "target_agent": { "type": "string" },
+        "prompt": { "type": "string" }
+      }
+    }
+  }
+}
