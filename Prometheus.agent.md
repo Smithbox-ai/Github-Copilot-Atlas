@@ -30,7 +30,7 @@ Produce implementation plans that are deterministic, schema-compliant, and execu
 
 ### Mandatory Workflow Procedure
 0. Clarification Gate: BEFORE proceeding to Design, evaluate the request against ALL five mandatory clarification classes in `docs/agent-engineering/CLARIFICATION-POLICY.md`. If ANY class matches, STOP and call `vscode/askQuestions` with 2-3 concrete options, affected files/components, and a recommended option with rationale. Do NOT proceed to Design until clarification is resolved or explicitly determined non-applicable.
-1. Research (delegate Explorer/Oracle when scope is large).
+1. Research (delegate Explorer-subagent/Oracle when scope is large).
 2. Design (architecture choices and constraints).
 3. Planning (phase decomposition with quality gates).
 4. Handoff (Atlas-ready payload and plan file).
@@ -96,7 +96,7 @@ If external knowledge is missing, use Context7 or `web/fetch` before finalizing.
 
 ### Allowed
 - Read/search tools for discovery.
-- `agent/runSubagent` for research delegation (Explorer/Oracle).
+- `agent/runSubagent` for research delegation (Explorer-subagent/Oracle).
 - `web/githubRepo` for reading GitHub issues, PRs, and repository context.
 - `vscode/getProjectSetupInfo` for automatic project stack detection (framework, language, package manager).
 - `vscode/askQuestions` for resolving mandatory clarification classes — present structured options before planning.
@@ -219,8 +219,8 @@ Every plan must satisfy:
 
 Before planning, evaluate research needs:
 - **Small scope** (≤5 files, clear requirements): research inline, no delegation.
-- **Medium scope** (6–15 files or unclear boundaries): delegate to Explorer for file mapping.
-- **Large scope** (>15 files or cross-cutting concerns): delegate to both Explorer and Oracle; synthesize findings before planning.
+- **Medium scope** (6–15 files or unclear boundaries): delegate to Explorer-subagent for file mapping.
+- **Large scope** (>15 files or cross-cutting concerns): delegate to both Explorer-subagent and Oracle; synthesize findings before planning.
 
 Default: when in doubt, delegate research early — under-researched plans fail at implementation.
 
