@@ -160,6 +160,20 @@ for (const file of scenarioFiles) {
     continue;
   }
 
+  // Check prometheus scenarios assert risk_review presence
+  if (targetAgent === 'Prometheus') {
+    const hasSingleExpected = scenario.expected && typeof scenario.expected === 'object';
+    const hasInputs = Array.isArray(scenario.inputs);
+    const topLevelAsserts = hasSingleExpected ? scenario.expected.risk_review_present === true : false;
+    const inputLevelAsserts = hasInputs
+      ? scenario.inputs.every(i => !i.expected || i.expected.risk_review_present === true || i.expected.data_volume_must_be !== undefined)
+      : false;
+    if (!topLevelAsserts && !inputLevelAsserts) {
+      fail(`${file}: Prometheus scenario missing risk_review_present assertion (add to expected or each input.expected)`);
+      continue;
+    }
+  }
+
   const agentFile = join(ROOT, `${targetAgent}.agent.md`);
   if (!existsSync(agentFile)) {
     fail(`${file}: target_agent "${targetAgent}" → no matching agent.md`);

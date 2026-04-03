@@ -17,7 +17,7 @@
     "recommendation"
   ],
   "properties": {
-    "schema_version": { "type": "string", "const": "1.1.0" },
+    "schema_version": { "type": "string", "const": "1.2.0" },
     "agent": { "type": "string", "const": "Challenger-subagent" },
     "status": {
       "type": "string",
@@ -130,6 +130,24 @@
             "type": "string",
             "description": "Description of the first check that failed, explaining what is missing or underspecified. Omit if executable is true."
           }
+        }
+      }
+    },
+    "audit_scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Records the focus areas requested by Atlas and the audit dimensions actually covered in this run.",
+      "required": ["requested_focus_areas", "covered_dimensions"],
+      "properties": {
+        "requested_focus_areas": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Focus areas passed by Atlas in the delegation payload. Empty array if Atlas used default full-audit scope."
+        },
+        "covered_dimensions": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Audit dimensions actually evaluated in this run (e.g. security, architecture, performance)."
         }
       }
     },

@@ -11,6 +11,7 @@ A multi-agent orchestration system for VS Code Copilot. This fork replaces vibe-
 - **Parallel Agent Execution** — Atlas dispatches independent subagents in parallel when tasks have no dependencies, using wave-based execution from Prometheus plans.
 - **Structured Planning** — Prometheus produces phased plans with explicit task IDs, dependencies, wave assignments, inter-phase contracts, failure expectations, and Mermaid architecture diagrams (mandatory for 3+ phase plans).
 - **Adversarial Plan Review** — Challenger audits complex plans for architecture defects, security gaps, and dependency conflicts before implementation begins.
+- **Semantic Risk Discovery** — Prometheus evaluates 7 non-functional risk categories (`data_volume`, `performance`, `concurrency`, `access_control`, `migration_rollback`, `dependency`, `operability`) at planning step 0.5 — before research delegation. Plans with unresolved HIGH-impact risks automatically trigger Challenger even for small, high-confidence plans.
 - **Deterministic Handoffs** — every subagent returns a structured JSON report; Atlas validates schema compliance before accepting results.
 - **Reliability Gates** — PreFlect (pre-execution review), human approval gates for destructive operations, and explicit abstention when confidence is low.
 - **TDD Integration** — Code-Review and implementation agents enforce test-first methodology.

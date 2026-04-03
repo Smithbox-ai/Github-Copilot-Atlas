@@ -8,6 +8,7 @@
   },
   "expected": {
     "schema": "schemas/prometheus.plan.schema.json",
+    "risk_review_present": true,
     "must_use_tool": "vscode/askQuestions",
     "clarification_options_min": 2,
     "clarification_options_max": 3,
@@ -17,7 +18,8 @@
     "after_clarification": {
       "response_begins_with_schema_object": true,
       "markdown_plan_created_after_schema_output": true,
-      "handoff_present": true
+      "handoff_present": true,
+      "risk_review_present": true
     },
     "must_not": "emit markdown plan before schema JSON object or plan without first clarifying scope"
   }

@@ -14,6 +14,7 @@ This folder contains scenario fixtures used to validate reliability for core age
 9. Clarification triggering via askQuestions for enumerated ambiguity classes.
 10. Tool routing compliance (Context7/MCP usage when third-party docs are needed).
 11. NEEDS_INPUT routing from subagents through Atlas to user via askQuestions.
+12. Semantic risk coverage — Prometheus `risk_review` array is present and covers all 7 categories in every plan output.
 
 ## Suggested execution flow
 1. Run each scenario against the corresponding agent contract.
@@ -49,6 +50,15 @@ This folder contains scenario fixtures used to validate reliability for core age
 - `scenarios/agent-triggering-quality.json`
 - `scenarios/prometheus-ambiguity-plus-schema.json`
 
+### Challenger adversarial and integration
+- `scenarios/challenger-contract.json`
+- `scenarios/challenger-adversarial-detection.json`
+- `scenarios/challenger-replan-loop.json`
+- `scenarios/atlas-challenger-integration.json`
+
+### Semantic risk discovery
+- `scenarios/prometheus-large-data-risk-discovery.json`
+
 ## Running Validations
 
 The `validate.mjs` harness runs structural checks against schemas, agent prompts, and eval fixtures. It does not execute the agents themselves.
@@ -71,7 +81,7 @@ npm test
 | Pass | What it checks |
 |------|----------------|
 | **1 — Schema Validity** | All `schemas/*.schema.json` compile under `ajv` JSON Schema 2020-12. |
-| **2 — Scenario Integrity** | All `evals/scenarios/*.json` have the required identity fields and point to real agent files. |
+| **2 — Scenario Integrity** | All `evals/scenarios/*.json` have the required identity fields and point to real agent files. Prometheus scenarios must assert `risk_review_present: true`. |
 | **3 — Reference Integrity** | All backtick schema/doc references inside `*.agent.md` resolve to existing files. |
 | **3b — Required Artifacts** | Shared repo-local dependencies like `.github/copilot-instructions.md`, `plans/project-context.md`, and governance docs exist. |
 | **3c — Tool Grant Consistency** | Every agent frontmatter `tools:` list matches the repository's canonical least-privilege tool set. |

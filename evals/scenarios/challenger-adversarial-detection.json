@@ -79,6 +79,21 @@
         "minimum_severity": "CRITICAL",
         "status_must_not_be": "APPROVED"
       }
+    },
+    {
+      "label": "unbounded-large-table-query",
+      "description": "Plan adds a query over a 2M-row table with no pagination, no index reference, and no performance acceptance criteria",
+      "planted_flaws": ["missing_pagination", "no_performance_acceptance_criteria"],
+      "input": {
+        "plan_path": "plans/test-unbounded-query.md",
+        "plan_summary": "3-phase plan that adds a GET /adjustments endpoint fetching all rows from forecast_adjustments (2M rows) with no LIMIT, no pagination, and no index strategy. Acceptance criteria contain no latency or throughput targets.",
+        "focus_areas": ["performance"]
+      },
+      "expected_detection": {
+        "must_find_category": "performance",
+        "minimum_severity": "MAJOR",
+        "status_must_not_be": "APPROVED"
+      }
     }
   ],
   "assertions": [
@@ -87,6 +102,8 @@
     "Severity is at least the expected minimum",
     "Status is never APPROVED when CRITICAL flaws are present",
     "Each finding has a non-empty suggested_fix",
-    "Output conforms to schemas/challenger.plan-audit.schema.json"
+    "Output conforms to schemas/challenger.plan-audit.schema.json",
+    "Challenger detects missing pagination on large-table queries as a performance MAJOR or CRITICAL finding",
+    "audit_scope.covered_dimensions includes performance when focus_areas includes performance"
   ]
 }

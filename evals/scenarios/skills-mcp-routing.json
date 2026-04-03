@@ -8,6 +8,7 @@
   },
   "expected": {
     "schema": "schemas/prometheus.plan.schema.json",
+    "risk_review_present": true,
     "must_use_tool_sequence": ["io.github.upstash/context7/resolve-library-id", "io.github.upstash/context7/get-library-docs"],
     "plan_must_reference": "external library documentation",
     "must_not": "finalize plan without consulting library docs"

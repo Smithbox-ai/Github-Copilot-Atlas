@@ -23,6 +23,20 @@ Compliance rate: 11/11 (100%) against 9-item checklist
 
 ## Recently Resolved Gaps
 
+### Semantic Risk Discovery (NEW, 2026-04-02)
+Root cause: Challenger trigger criteria were purely structural (phase count, confidence, destructive scope). Plans could pass all structural checks while silently omitting non-functional risk analysis (data volume, performance, lock contention). Real-world case: forecast adjustment API plan omitted large-table load analysis; required separate manual review before v2 plan was safe for execution.
+
+Changes applied across 5 phases:
+- **`schemas/prometheus.plan.schema.json`** bumped to `1.2.0`. Added required `risk_review` array: 7 semantic risk categories (`data_volume`, `performance`, `concurrency`, `access_control`, `migration_rollback`, `dependency`, `operability`), each with `applicability`, `impact`, `evidence_source`, and `disposition` fields.
+- **`Prometheus.agent.md`**: Added Mandatory Workflow step `0.5` — Semantic Risk Discovery Gate with per-category detection heuristics. Updated PreFlect checklist with item 4 (semantic risk completeness). Added `### Semantic Risk Review` table to plan markdown template. Added quality standard 11 (risk-reviewed).
+- **`Atlas.agent.md`**: Extended `PLAN_REVIEW` trigger condition with 4th rule: any `risk_review` entry with `applicability: applicable` AND `impact: HIGH` AND `disposition != resolved` triggers Challenger regardless of phase count or confidence. Added deterministic `focus_areas` derivation mapping from risk category to Challenger focus area.
+- **`Challenger-subagent.agent.md`**: Added audit dimension 8 — Performance & Data Volume Audit. Covers unbounded queries, algorithm complexity, pagination gaps, missing benchmark targets, and lock contention risks. Evidence gap rule: emit `scope_gap` MINOR when codebase artifacts are unavailable (do NOT ABSTAIN).
+- **`schemas/challenger.plan-audit.schema.json`** bumped to `1.2.0`. Added optional `audit_scope` field recording `requested_focus_areas` and `covered_dimensions`.
+- **`docs/agent-engineering/RELIABILITY-GATES.md`**: Added Section 9 — Semantic Risk Coverage with required controls and acceptance gate.
+- **`plans/project-context.md`**: Added Semantic Risk Taxonomy table; updated Typical Workflow Challenger description.
+- **Eval scenarios**: Created `evals/scenarios/prometheus-large-data-risk-discovery.json` (3 inputs). Updated `prometheus-schema-output.json`, `prometheus-ambiguity-plus-schema.json` (add `risk_review_present` assertions). Updated `challenger-adversarial-detection.json` (add unbounded-query case + `audit_scope` assertion). Updated `atlas-challenger-integration.json` (add 2 semantic risk trigger/skip cases + 2 assertions).
+- **`evals/validate.mjs`**: Pass 2 now verifies Prometheus scenarios assert `risk_review_present`.
+
 ### Adversarial Plan Review (NEW)
 - Added `Challenger-subagent.agent.md` as adversarial plan auditor.
 - Schema: `schemas/challenger.plan-audit.schema.json`.

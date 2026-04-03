@@ -31,6 +31,15 @@ Produce implementation plans that are deterministic, schema-compliant, and execu
 
 ### Mandatory Workflow Procedure
 0. Clarification Gate: BEFORE proceeding to Design, evaluate the request against ALL five mandatory clarification classes in `docs/agent-engineering/CLARIFICATION-POLICY.md`. If ANY class matches, STOP and call `vscode/askQuestions` with 2-3 concrete options, affected files/components, and a recommended option with rationale. Do NOT proceed to Design until clarification is resolved or explicitly determined non-applicable.
+0.5. Semantic Risk Discovery Gate: AFTER clarification and BEFORE research delegation, evaluate all 7 semantic risk categories from `plans/project-context.md`. For each category, assess applicability, impact, and evidence source. Follow these heuristics:
+  - **data_volume**: applicable if the task touches tables, datasets, batch operations, or pagination. Look for `SELECT *`, unbounded queries, missing `LIMIT` clauses, migration of large tables.
+  - **performance**: applicable if the task modifies query paths, aggregations, sorting, or adds algorithmic logic. Check for N+1 patterns, missing indexes, computed columns in hot paths.
+  - **concurrency**: applicable if the task adds parallel writes, shared mutable state, event handlers, or background jobs.
+  - **access_control**: applicable if the task changes data visibility, adds new API endpoints, or alters ownership models. Note: cryptographic and vulnerability checks belong to Challenger's Security Audit — do not duplicate.
+  - **migration_rollback**: applicable if the task includes database schema changes, data transforms, or file format changes. Verify a rollback path exists.
+  - **dependency**: applicable if the task calls external services, installs new packages, or upgrades existing ones. Verify behavioral contracts from local code or external docs.
+  - **operability**: applicable if the task deploys new services, changes infrastructure, or alters observability surfaces.
+  Record findings in the `risk_review` array. Any category with `applicability: applicable` AND `impact: HIGH` that cannot be resolved from available evidence MUST set `disposition: research_phase_added` and trigger a dedicated research phase BEFORE implementation phases.
 1. Research (delegate Scout-subagent/Oracle when scope is large).
 2. Design (architecture choices and constraints).
 3. Planning (phase decomposition with quality gates).
@@ -65,6 +74,7 @@ Before finalizing a plan, evaluate:
 1. Scope clarity risk — is the request ambiguous enough to require clarification?
 2. Evidence sufficiency risk — has enough codebase evidence been gathered?
 3. External knowledge risk — does the plan depend on third-party behavior not verified from local code?
+4. Semantic risk completeness — has every `risk_review` category been evaluated? Are any `HIGH`-impact entries still `open_question`? If so, a research phase must be added before implementation phases begin.
 
 If scope ambiguity matches any mandatory clarification class (Step 0), STOP and call `vscode/askQuestions` before proceeding.
 If external knowledge is missing, use Context7 or `web/fetch` before finalizing.
@@ -167,6 +177,19 @@ Define data and interface contracts between phases that have dependencies:
 ### Risks
 - Identified risks with mitigation strategies.
 
+### Semantic Risk Review
+Mandatory checklist — evaluate every category. Non-applicable entries must still appear with `applicability: not_applicable`.
+
+| Category | Applicability | Impact | Evidence Source | Disposition |
+|---|---|---|---|---|
+| data_volume | applicable / not_applicable / uncertain | HIGH/MEDIUM/LOW/UNKNOWN | file or query | resolved / open_question / research_phase_added / not_applicable |
+| performance | ... | ... | ... | ... |
+| concurrency | ... | ... | ... | ... |
+| access_control | ... | ... | ... | ... |
+| migration_rollback | ... | ... | ... | ... |
+| dependency | ... | ... | ... | ... |
+| operability | ... | ... | ... | ... |
+
 ### Success Criteria
 - Measurable criteria for plan completion.
 
@@ -205,6 +228,7 @@ Every plan must satisfy:
 8. **Visualized** — Plans with 3+ phases MUST include an Architecture Visualization section with at least a phase dependency DAG in Mermaid format.
 9. **Failure-aware** — Each phase includes failure expectations with classification and mitigation strategies.
 10. **Executable** — Each phase MUST specify: concrete file paths, input/output contracts, verification commands, test specifics, and the owning `executor_agent` sufficient for a cold-start executor to proceed without additional clarification. Vague steps like "implement the feature" without file-level detail are non-compliant.
+11. **Risk-reviewed** — Every plan MUST include a populated `risk_review` array covering all 7 semantic risk categories (`data_volume`, `performance`, `concurrency`, `access_control`, `migration_rollback`, `dependency`, `operability`). Each entry must state applicability, impact, evidence source, and disposition. Plans with any `HIGH`-impact `open_question` entry must include a research phase to resolve it before implementation begins.
 
 ### Research Scaling
 

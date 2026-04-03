@@ -31,7 +31,7 @@ Run deterministic orchestration for: `Research -> Design -> Planning -> Implemen
 ### State Machine
 - `PLANNING` -> `WAITING_APPROVAL` -> `PLAN_REVIEW` -> `ACTING` -> `REVIEWING` -> `WAITING_APPROVAL` -> (`ACTING` next phase OR `COMPLETE`).
 - `PLAN_REVIEW` is the adversarial audit gate: after user approves the plan and before implementation begins, delegate to Challenger for complex plans.
-- `PLAN_REVIEW` is conditional — triggered only for plans with 3+ phases, confidence below 0.9, or high-risk/destructive scope. Simple plans skip directly to `ACTING`.
+- `PLAN_REVIEW` is conditional — triggered only for plans with 3+ phases, confidence below 0.9, high-risk/destructive scope, OR any `risk_review` entry with `applicability: applicable` AND `impact: HIGH` AND `disposition` not `resolved`. Simple plans skip directly to `ACTING`.
 - If Challenger returns `NEEDS_REVISION`: route back to Prometheus for targeted replan (max 2 iterations, then escalate to user).
 - If Challenger returns `REJECTED`: transition to `WAITING_APPROVAL` with Challenger findings for user decision.
 - If Challenger returns `APPROVED` or is skipped: transition to `ACTING`.
@@ -146,7 +146,15 @@ Reference: `docs/agent-engineering/TOOL-ROUTING.md`
    - Pause for user approval.
 
 4. **Plan Review Gate (Conditional)**
-   - Trigger conditions: plan has 3+ phases, OR plan confidence < 0.9, OR scope includes destructive/high-risk operations.
+   - Trigger conditions: plan has 3+ phases, OR plan confidence < 0.9, OR scope includes destructive/high-risk operations, OR any `risk_review` entry has `applicability: applicable` AND `impact: HIGH` AND `disposition` is not `resolved`.
+   - When triggered by a semantic `risk_review` entry, derive `focus_areas` for the Challenger delegation using this mapping (from `plans/project-context.md` — Semantic Risk Taxonomy):
+     - `data_volume` or `performance` → `focus_areas: ["performance"]`
+     - `concurrency` → `focus_areas: ["architecture"]`
+     - `access_control` → `focus_areas: ["architecture"]`
+     - `migration_rollback` → `focus_areas: ["destructive_risk", "missing_rollback"]`
+     - `dependency` → `focus_areas: ["architecture"]`
+     - `operability` → `focus_areas: ["executability"]`
+   - Multiple applicable HIGH-impact entries are merged: pass the full union of derived focus areas to Challenger.
    - If triggered: delegate plan artifact path to Challenger-subagent. Challenger reads the persisted plan file, not an inline prompt summary.
    - If Challenger returns `APPROVED`: proceed to Implementation Loop.
    - If Challenger returns `NEEDS_REVISION` with `fixable`: route findings back to Prometheus for targeted revision (max 2 Challenger-Prometheus iterations).

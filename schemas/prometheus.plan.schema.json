@@ -15,11 +15,12 @@
     "phases",
     "open_questions",
     "risks",
+    "risk_review",
     "success_criteria",
     "handoff"
   ],
   "properties": {
-    "schema_version": { "type": "string", "const": "1.1.0" },
+    "schema_version": { "type": "string", "const": "1.2.0" },
     "agent": { "type": "string", "const": "Prometheus" },
     "status": {
       "type": "string",
@@ -177,6 +178,38 @@
         "properties": {
           "risk": { "type": "string" },
           "mitigation": { "type": "string" }
+        }
+      }
+    },
+    "risk_review": {
+      "type": "array",
+      "description": "Mandatory semantic risk checklist. Prometheus must evaluate every category before plan finalization. Non-applicable categories must still be listed with applicability: not_applicable.",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "applicability", "impact", "disposition"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": ["data_volume", "performance", "concurrency", "access_control", "migration_rollback", "dependency", "operability"]
+          },
+          "applicability": {
+            "type": "string",
+            "enum": ["applicable", "not_applicable", "uncertain"]
+          },
+          "evidence_source": {
+            "type": "string",
+            "description": "File path, query, or external source that supports the applicability assessment."
+          },
+          "impact": {
+            "type": "string",
+            "enum": ["HIGH", "MEDIUM", "LOW", "UNKNOWN"]
+          },
+          "disposition": {
+            "type": "string",
+            "enum": ["resolved", "open_question", "research_phase_added", "not_applicable"]
+          }
         }
       }
     },

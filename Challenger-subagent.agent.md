@@ -75,6 +75,16 @@ For each plan, evaluate against these dimensions:
    - A task FAILS if a fresh executor would be blocked without additional clarification.
    - MUST populate `executability_checklist` per schema. If any task fails, raise at minimum a MAJOR finding.
 
+8. **Performance & Data Volume Audit**
+   - Activate when: `audit_scope.requested_focus_areas` includes `performance`, OR any plan `risk_review` entry has `category: data_volume` or `category: performance` with `applicability: applicable` and `impact: HIGH` or `MEDIUM`.
+   - Evaluate:
+     - **Dataset cardinality assumptions** — are table sizes or collection sizes documented? Is operation complexity bounded? Flag unbounded `SELECT *` or missing `LIMIT` clauses.
+     - **Algorithm and query complexity** — are there O(n²) loops, missing indexes, or expensive aggregations in hot paths?
+     - **Pagination and streaming** — are large-result-set operations paginated or streamed? Flag plans that load entire datasets into memory without pagination.
+     - **Benchmark and load-test planning** — do acceptance criteria include performance targets (latency, throughput, RPS)? Flag if no benchmarks exist for data-intensive phases.
+     - **Lock and contention risks** — does the plan create row-level or table-level locks that could cause degradation under concurrent load?
+   - Evidence gap rule: if no codebase artifacts are available to assess dataset size or indexing, emit a `scope_gap` MINOR finding describing what evidence would be needed. Do NOT return `ABSTAIN` — insufficient evidence for performance evaluation is a gap, not an abstention trigger.
+
 ### Plan Artifact Handling
 - Atlas provides the `plan_path` in the delegation payload.
 - Read the plan file via `read/readFile`. Do NOT rely on inline prompt-only plan descriptions.

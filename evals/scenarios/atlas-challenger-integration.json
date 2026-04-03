@@ -95,16 +95,66 @@
         "routes_to": "Prometheus",
         "max_iterations": 2
       }
+    },
+    {
+      "label": "semantic-risk-high-data-volume-triggers-challenger",
+      "description": "A 2-phase, high-confidence, non-destructive plan with applicable HIGH data_volume risk must trigger Challenger",
+      "input": {
+        "plan": {
+          "phase_count": 2,
+          "confidence": 0.95,
+          "has_destructive_ops": false,
+          "risk_review": [
+            {
+              "category": "data_volume",
+              "applicability": "applicable",
+              "impact": "HIGH",
+              "disposition": "open_question"
+            }
+          ]
+        }
+      },
+      "expected_behavior": {
+        "challenger_invoked": true,
+        "trigger_reason": "semantic_risk_high_impact_unresolved",
+        "delegation_includes": ["plan_path", "plan_summary", "focus_areas"],
+        "focus_areas_must_include": ["performance"]
+      }
+    },
+    {
+      "label": "semantic-risk-resolved-skips-challenger",
+      "description": "A 2-phase, high-confidence plan with applicable HIGH data_volume risk that is resolved must skip Challenger",
+      "input": {
+        "plan": {
+          "phase_count": 2,
+          "confidence": 0.95,
+          "has_destructive_ops": false,
+          "risk_review": [
+            {
+              "category": "data_volume",
+              "applicability": "applicable",
+              "impact": "HIGH",
+              "disposition": "resolved"
+            }
+          ]
+        }
+      },
+      "expected_behavior": {
+        "challenger_invoked": false,
+        "proceeds_to": "ACTING"
+      }
     }
   ],
   "assertions": [
     "Challenger is invoked for plans with 3+ phases",
     "Challenger is invoked for plans with confidence < 0.9",
     "Challenger is invoked for plans with destructive operations",
-    "Challenger is NOT invoked for simple plans (< 3 phases, high confidence, non-destructive)",
+    "Challenger is NOT invoked for simple plans (< 3 phases, high confidence, non-destructive, no unresolved HIGH-impact risk_review entries)",
     "Atlas passes plan_path (not inline plan) to Challenger",
     "REJECTED status transitions to WAITING_APPROVAL",
     "NEEDS_REVISION routes back to Prometheus with max 2 iterations",
-    "ABSTAIN from Challenger does not block pipeline"
+    "ABSTAIN from Challenger does not block pipeline",
+    "Challenger is invoked for plans with any risk_review entry applicability=applicable AND impact=HIGH AND disposition != resolved",
+    "When triggered by semantic risk, Atlas derives focus_areas from risk category mapping and includes them in delegation"
   ]
 }

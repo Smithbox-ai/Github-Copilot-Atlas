@@ -8,6 +8,7 @@
   },
   "expected": {
     "schema": "schemas/prometheus.plan.schema.json",
+    "risk_review_present": true,
     "must_use_tool": "vscode/askQuestions",
     "clarification_options_min": 2,
     "clarification_options_max": 3,

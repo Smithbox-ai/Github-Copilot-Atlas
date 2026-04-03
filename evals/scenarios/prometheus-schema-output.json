@@ -13,6 +13,8 @@
     "phase_required_fields": ["executor_agent"],
     "markdown_plan_created_after_schema_output": true,
     "handoff_present": true,
+    "risk_review_present": true,
+    "risk_review_covers_all_categories": true,
     "must_not": "markdown-only response"
   }
 }
