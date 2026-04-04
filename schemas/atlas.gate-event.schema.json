@@ -45,6 +45,32 @@
         "enum": ["pii_checked", "destructive_action_checked", "scope_checked", "policy_checked", "todo_verified"]
       }
     },
-    "next_action": { "type": "string", "minLength": 3 }
+    "next_action": { "type": "string", "minLength": 3 },
+    "iteration_index": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Current iteration index in plan-review loop."
+    },
+    "max_iterations": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Maximum iterations configured for this plan review."
+    },
+    "skeptic_status": {
+      "type": "string",
+      "enum": ["COMPLETE", "ABSTAIN", "NOT_RUN"],
+      "description": "Status of Skeptic mirage detection for this gate."
+    },
+    "dryrun_status": {
+      "type": "string",
+      "enum": ["PASS", "FAIL", "WARN", "NOT_RUN"],
+      "description": "Status of DryRun executability check for this gate."
+    },
+    "trace_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID v4 for log correlation across multi-agent chains."
+    }
   }
 }

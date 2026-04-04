@@ -83,6 +83,8 @@ const EXPECTED_AGENT_TOOLS = {
   'BrowserTester-subagent.agent.md': ['search', 'usages', 'problems', 'changes', 'edit', 'fetch'],
   'Code-Review-subagent.agent.md': ['search', 'usages', 'problems', 'changes', 'runCommands', 'runTasks'],
   'Challenger-subagent.agent.md': ['read/readFile', 'read/problems', 'search/codebase', 'search/fileSearch', 'search/textSearch', 'search/listDirectory', 'search/usages'],
+  'Skeptic-subagent.agent.md': ['read/readFile', 'search/codebase', 'search/fileSearch', 'search/listDirectory', 'search/textSearch', 'search/usages'],
+  'DryRun-subagent.agent.md': ['read/readFile', 'search/codebase', 'search/fileSearch', 'search/listDirectory', 'search/textSearch'],
 };
 
 function parseFrontmatterTools(content) {

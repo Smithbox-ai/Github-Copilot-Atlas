@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://copilot-atlas.local/schemas/dryrun.execution-report.schema.json",
+  "title": "DryRunExecutionReport",
+  "description": "Output schema for the DryRun cold-start executability simulator. Validates that plan tasks are specific enough for zero-context execution.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "agent",
+    "status",
+    "confidence",
+    "abstain",
+    "tasks_simulated",
+    "overall_executability_score",
+    "recommendation"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "agent": { "type": "string", "const": "DryRun-subagent" },
+    "status": {
+      "type": "string",
+      "enum": ["PASS", "FAIL", "WARN", "ABSTAIN"],
+      "description": "PASS: all tasks executable. FAIL: blocking ambiguity found. WARN: minor ambiguities with workarounds. ABSTAIN: unable to simulate."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence in the simulation. Below 0.6 triggers automatic ABSTAIN."
+    },
+    "abstain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_abstaining", "reasons"],
+      "properties": {
+        "is_abstaining": { "type": "boolean" },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "tasks_simulated": {
+      "type": "array",
+      "description": "Simulation results for up to the first 3 plan tasks.",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_id", "pre_execution_checklist", "walkthrough_steps", "task_verdict"],
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "description": "Phase and step reference, e.g. 'Phase1-Step1'."
+          },
+          "pre_execution_checklist": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "8-point checklist for task readiness.",
+            "required": ["what_clear", "where_clear", "how_clear", "inputs_defined", "outputs_defined", "dependencies_met", "verify_command_complete", "test_specifics_concrete"],
+            "properties": {
+              "what_clear": { "type": "boolean" },
+              "where_clear": { "type": "boolean" },
+              "how_clear": { "type": "boolean" },
+              "inputs_defined": { "type": "boolean" },
+              "outputs_defined": { "type": "boolean" },
+              "dependencies_met": { "type": "boolean" },
+              "verify_command_complete": { "type": "boolean" },
+              "test_specifics_concrete": { "type": "boolean" }
+            }
+          },
+          "walkthrough_steps": {
+            "type": "array",
+            "description": "7-step mental execution walkthrough.",
+            "minItems": 1,
+            "maxItems": 7,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["step", "status"],
+              "properties": {
+                "step": {
+                  "type": "string",
+                  "enum": ["open_file", "read_existing_code", "write_test_red", "run_test", "write_implementation_green", "run_test_again", "refactor"]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["CLEAR", "AMBIGUOUS", "BLOCKED"]
+                },
+                "blocker_description": {
+                  "type": "string",
+                  "description": "Description of the blocker. Required when status is BLOCKED."
+                }
+              }
+            }
+          },
+          "task_verdict": {
+            "type": "string",
+            "enum": ["EXECUTABLE", "AMBIGUOUS", "BLOCKED"],
+            "description": "Overall verdict for this task."
+          },
+          "checklist_score": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1,
+            "description": "checks_passed / 8"
+          }
+        }
+      }
+    },
+    "overall_executability_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Average of all task checklist_scores."
+    },
+    "recommendation": {
+      "type": "string",
+      "description": "Concise recommendation: proceed, or revise specific tasks."
+    },
+    "failure_classification": {
+      "type": "string",
+      "enum": ["fixable", "needs_replan", "escalate"],
+      "description": "Required when status is FAIL."
+    }
+  }
+}

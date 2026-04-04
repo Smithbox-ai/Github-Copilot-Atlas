@@ -97,6 +97,32 @@ For each plan, evaluate against these dimensions:
 - **REJECTED**: Fundamental design flaw, critical security gap, or circular dependency that cannot be fixed with phase-level patches.
 - **ABSTAIN**: Plan artifact is inaccessible, confidence below 0.7, or insufficient codebase context to evaluate.
 
+### Quantitative Scoring Protocol
+Reference: `docs/agent-engineering/SCORING-SPEC.md` (single source of truth for all scoring).
+
+After completing all audit dimensions, compute a quantitative score:
+
+1. **Evaluate each active dimension** (7 plan-level dimensions from SCORING-SPEC.md):
+   - `correctness` (×3.0): Are plan logic and API references factually correct?
+   - `completeness` (×2.5): Are all stated requirements covered without orphaned features?
+   - `executability` (×2.5): Can tasks be executed from plan artifact alone?
+   - `tdd_quality` (×1.5): Do tests precede implementation with concrete inputs/outputs?
+   - `security` (×1.5, conditional): No auth gaps, injection vectors, or secrets exposure?
+   - `performance` (×1.0, conditional): No unbounded queries or missing pagination?
+   - `code_quality` (×0.5): Does the plan follow project conventions?
+
+2. **Apply cross-validated ceilings** (when evidence is available):
+   - Correctness capped by Skeptic mirage count (if Skeptic ran in this iteration).
+   - Completeness capped by Skeptic absence mirage count.
+   - Executability capped by DryRun blocked task count.
+   - If Skeptic/DryRun did not run, raw scores stand uncapped.
+
+3. **Compute percentage**: `(weighted_sum / max_possible) × 100`.
+
+4. **Map to verdict**: ≥75% + zero blocking → APPROVED; 60–74% → NEEDS_REVISION; <60% → REJECTED. Blocking issues override percentage (any CRITICAL → REJECTED regardless of score).
+
+Emit the `scoring` object in schema output per `schemas/challenger.plan-audit.schema.json`.
+
 ## Archive
 
 ### Context Compaction Policy
@@ -121,6 +147,7 @@ If plan artifact is incomplete or inaccessible, return `ABSTAIN` rather than an 
 
 - `docs/agent-engineering/PART-SPEC.md`
 - `docs/agent-engineering/RELIABILITY-GATES.md`
+- `docs/agent-engineering/SCORING-SPEC.md`
 - `schemas/challenger.plan-audit.schema.json`
 - `schemas/prometheus.plan.schema.json` (reference for expected plan structure)
 - `plans/project-context.md` (if present)

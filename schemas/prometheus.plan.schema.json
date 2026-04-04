@@ -75,7 +75,9 @@
               "DevOps-subagent",
               "DocWriter-subagent",
               "BrowserTester-subagent",
-              "Code-Review-subagent"
+              "Code-Review-subagent",
+              "Skeptic-subagent",
+              "DryRun-subagent"
             ],
             "description": "Primary subagent Atlas must dispatch for this phase. Atlas treats this field as authoritative and must not override it with heuristics."
           },
@@ -130,6 +132,11 @@
               "type": "string",
               "enum": ["tests_pass", "lint_clean", "schema_valid", "safety_clear", "human_approved_if_required"]
             }
+          },
+          "skill_references": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "File paths to relevant skill patterns from the skills library."
           }
         }
       }
@@ -240,6 +247,18 @@
         "target_agent": { "type": "string" },
         "prompt": { "type": "string" }
       }
+    },
+    "complexity_tier": {
+      "type": "string",
+      "enum": ["TRIVIAL", "SMALL", "MEDIUM", "LARGE"],
+      "description": "Task complexity classification. Determines pipeline depth: TRIVIAL skips plan review, SMALL uses lite review, MEDIUM/LARGE use full review pipeline."
+    },
+    "iteration_budget": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "default": 5,
+      "description": "Maximum plan-review iterations before escalation to user."
     }
   }
 }

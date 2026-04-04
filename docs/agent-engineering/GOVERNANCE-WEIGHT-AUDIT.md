@@ -143,6 +143,35 @@ The system is already lite-mode-aware for 1–2 phase plans: Challenger is skipp
 
 ---
 
+## Post-Modernization Token Impact (2026-04-04)
+
+### Template Externalization Savings
+Atlas embedded templates (~100 lines, ~1,500 tokens) replaced with file references (~5 lines, ~75 tokens).
+**Net savings: ~1,425 tokens per Atlas invocation.**
+
+Prometheus Plan Document Template (~55 lines, ~825 tokens) replaced with file reference (~2 lines, ~30 tokens).
+**Net savings: ~795 tokens per Prometheus invocation.**
+
+### New Agent Overhead
+| Agent | Lines | Est. Tokens | Dispatch Frequency |
+|-------|-------|------------|-------------------|
+| Skeptic-subagent | ~131 | ~1,965 | Conditional (MEDIUM/LARGE tier only) |
+| DryRun-subagent | ~136 | ~2,040 | Conditional (LARGE tier only) |
+
+### New Sections Added to Existing Agents
+| Agent | Section | Lines | Est. Tokens |
+|-------|---------|-------|------------|
+| Atlas | Iterative Review Loop, Complexity Routing, Observability | ~60 | ~900 |
+| Challenger | Quantitative Scoring Protocol | ~20 | ~300 |
+| Code-Review | Expanded Issue Validation, Scoring Protocol | ~30 | ~450 |
+| Prometheus | Complexity Gate, Skill Selection | ~15 | ~225 |
+
+### Net Assessment
+- Template savings offset most new section additions.
+- New agents (Skeptic, DryRun) are dispatched conditionally — TRIVIAL/SMALL tasks incur zero overhead.
+- For LARGE tasks (full pipeline): net increase ~2,000-3,000 tokens from new agents, partially offset by ~2,200 tokens in template savings.
+- Recommendation: the complexity gate ensures lightweight tasks use minimal resources.
+
 ## Actionable Recommendations (Safe to Implement)
 
 | Finding | Action | Files | Token Savings |

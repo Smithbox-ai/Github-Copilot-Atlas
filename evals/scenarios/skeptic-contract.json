@@ -1,0 +1,12 @@
+{
+  "scenario_id": "skeptic-contract-01",
+  "target_agent": "Skeptic-subagent",
+  "goal": "Verify Skeptic output conforms to skeptic.plan-audit.schema.json with required fields",
+  "description": "Structural validation that Skeptic produces schema-compliant output with mirage_findings array, scoring object with 5 dimensions, and valid status enum.",
+  "expected": {
+    "status_enum": ["COMPLETE", "ABSTAIN"],
+    "mirage_findings_present": true,
+    "scoring_dimensions_count": 5,
+    "schema_ref": "schemas/skeptic.plan-audit.schema.json"
+  }
+}

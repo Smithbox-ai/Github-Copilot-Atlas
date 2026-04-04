@@ -30,11 +30,17 @@ Run deterministic orchestration for: `Research -> Design -> Planning -> Implemen
 
 ### State Machine
 - `PLANNING` -> `WAITING_APPROVAL` -> `PLAN_REVIEW` -> `ACTING` -> `REVIEWING` -> `WAITING_APPROVAL` -> (`ACTING` next phase OR `COMPLETE`).
-- `PLAN_REVIEW` is the adversarial audit gate: after user approves the plan and before implementation begins, delegate to Challenger for complex plans.
-- `PLAN_REVIEW` is conditional — triggered only for plans with 3+ phases, confidence below 0.9, high-risk/destructive scope, OR any `risk_review` entry with `applicability: applicable` AND `impact: HIGH` AND `disposition` not `resolved`. Simple plans skip directly to `ACTING`.
-- If Challenger returns `NEEDS_REVISION`: route back to Prometheus for targeted replan (max 2 iterations, then escalate to user).
-- If Challenger returns `REJECTED`: transition to `WAITING_APPROVAL` with Challenger findings for user decision.
-- If Challenger returns `APPROVED` or is skipped: transition to `ACTING`.
+- `PLAN_REVIEW` is the adversarial audit gate with up to 5 iteration cycles:
+  1. Dispatch Skeptic-subagent AND Challenger-subagent in parallel with `plan_path` and `iteration_index`.
+  2. Wait for BOTH to return.
+  3. If Challenger `APPROVED` AND Skeptic has zero BLOCKING mirages → dispatch DryRun-subagent.
+  4. If DryRun `PASS` → plan APPROVED, exit loop → transition to `ACTING`.
+  5. If DryRun `FAIL`/`WARN` → route DryRun findings to Prometheus, increment `iteration_index`, continue loop.
+  6. If Challenger `NEEDS_REVISION` or Skeptic has BLOCKING mirages → route combined findings to Prometheus, increment `iteration_index`, continue loop.
+  7. Convergence check: if score improvement < 5% for 2 consecutive iterations → stagnation detected, present to user with findings summary.
+  8. If `iteration_index` exceeds `max_iterations` (5) → present best iteration's plan and remaining issues to user.
+- If Challenger returns `REJECTED`: transition to `WAITING_APPROVAL` with findings for user decision.
+- If Challenger or Skeptic returns `ABSTAIN`: log and proceed (do not block on audit uncertainty).
 - Any high-risk action transitions to `WAITING_APPROVAL` via `HIGH_RISK_APPROVAL_GATE`.
 
 ### Planning vs Acting Split (Hard Rule)
@@ -64,6 +70,11 @@ Use `vscode/askQuestions` directly when:
 - A subagent returns `NEEDS_INPUT` with `clarification_request` (see NEEDS_INPUT Routing below).
 
 Do NOT use `vscode/askQuestions` for questions answerable from codebase evidence or subagent reports.
+
+### Observability
+- Generate `trace_id` (UUID v4 format) at task start. Propagate to all gate events and subagent delegation payloads.
+- Include `trace_id`, `iteration_index`, and `max_iterations` in every gate-event emission per `schemas/atlas.gate-event.schema.json`.
+- Purpose: enable log correlation across multi-agent orchestration chains.
 
 ## Archive
 
@@ -105,7 +116,10 @@ Maintain awareness of current orchestration state at all times:
 - `schemas/atlas.delegation-protocol.schema.json` (on-demand — load only when constructing delegation calls)
 - `docs/agent-engineering/CLARIFICATION-POLICY.md`
 - `docs/agent-engineering/TOOL-ROUTING.md`
+- `docs/agent-engineering/SCORING-SPEC.md`
 - `plans/project-context.md` (if present)
+- `schemas/skeptic.plan-audit.schema.json`
+- `schemas/dryrun.execution-report.schema.json`
 - Plan artifacts directory: `plans/` (default location for all plan and completion files)
 
 ## Tools
@@ -146,21 +160,26 @@ Reference: `docs/agent-engineering/TOOL-ROUTING.md`
    - Pause for user approval.
 
 4. **Plan Review Gate (Conditional)**
-   - Trigger conditions: plan has 3+ phases, OR plan confidence < 0.9, OR scope includes destructive/high-risk operations, OR any `risk_review` entry has `applicability: applicable` AND `impact: HIGH` AND `disposition` is not `resolved`.
-   - When triggered by a semantic `risk_review` entry, derive `focus_areas` for the Challenger delegation using this mapping (from `plans/project-context.md` — Semantic Risk Taxonomy):
-     - `data_volume` or `performance` → `focus_areas: ["performance"]`
-     - `concurrency` → `focus_areas: ["architecture"]`
-     - `access_control` → `focus_areas: ["architecture"]`
-     - `migration_rollback` → `focus_areas: ["destructive_risk", "missing_rollback"]`
-     - `dependency` → `focus_areas: ["architecture"]`
-     - `operability` → `focus_areas: ["executability"]`
-   - Multiple applicable HIGH-impact entries are merged: pass the full union of derived focus areas to Challenger.
-   - If triggered: delegate plan artifact path to Challenger-subagent. Challenger reads the persisted plan file, not an inline prompt summary.
-   - If Challenger returns `APPROVED`: proceed to Implementation Loop.
-   - If Challenger returns `NEEDS_REVISION` with `fixable`: route findings back to Prometheus for targeted revision (max 2 Challenger-Prometheus iterations).
-   - If Challenger returns `NEEDS_REVISION` with `needs_replan`: route to Prometheus for full phase redesign of affected phases.
-   - If Challenger returns `REJECTED`: transition to `WAITING_APPROVAL`, present Challenger findings to user for decision.
-   - If Challenger returns `ABSTAIN`: log the abstention and proceed to Implementation Loop (do not block on audit uncertainty).
+   - Trigger conditions: plan has 3+ phases, OR plan confidence < 0.9, OR scope includes destructive/high-risk operations, OR any `risk_review` entry has `applicability: applicable` AND `impact: HIGH` AND `disposition` not `resolved`.
+   - **Complexity-Aware Routing:** Read `complexity_tier` from Prometheus plan output and adjust pipeline depth:
+     - **TRIVIAL**: Skip PLAN_REVIEW entirely — no Challenger, Skeptic, or DryRun. Proceed to Implementation Loop.
+     - **SMALL**: Run Challenger only (skip Skeptic and DryRun). Max 2 iterations.
+     - **MEDIUM**: Run Challenger + Skeptic in parallel (skip DryRun). Max 5 iterations.
+     - **LARGE**: Full pipeline — Challenger + Skeptic + DryRun. Max 5 iterations.
+     - **Override**: Any plan with `risk_review` HIGH-impact applicable entry → force full pipeline regardless of tier.
+   - When triggered by a semantic `risk_review` entry, derive `focus_areas` for delegation using the mapping from `plans/project-context.md` — Semantic Risk Taxonomy.
+   - **Iterative Review Loop (up to max_iterations):**
+     1. Generate `trace_id` (UUID v4) at loop start if not already set. Include in all gate events and delegation payloads.
+     2. Dispatch agents per complexity tier (see above). Pass `plan_path`, `iteration_index`, and `trace_id`.
+     3. Wait for all dispatched agents to return.
+     4. If Challenger `APPROVED` AND (Skeptic not dispatched OR zero BLOCKING mirages):
+        - If DryRun is in scope (LARGE tier): dispatch DryRun-subagent with `plan_path`.
+        - If DryRun `PASS` or not in scope → plan APPROVED, exit loop.
+        - If DryRun `FAIL`/`WARN` → route findings to Prometheus, increment `iteration_index`.
+     5. If Challenger `NEEDS_REVISION` or Skeptic has BLOCKING mirages → route combined findings to Prometheus, increment `iteration_index`.
+     6. **Convergence Detection:** If `iteration_index ≥ 3` and score improvement over previous 2 iterations < 5% → stagnation. Present findings summary to user with `WAITING_APPROVAL`.
+     7. If `iteration_index > max_iterations` → present best plan version and unresolved issues to user.
+   - **Regression Tracking:** At `iteration_index > 1`, load verified items from previous iteration. Pass to Challenger as context. Any previously verified item that now fails → automatic BLOCKING regression issue.
    - If trigger conditions are not met: skip directly to Implementation Loop.
 
 5. **Implementation Loop (Per Phase)**
@@ -267,99 +286,21 @@ To reduce approval fatigue on multi-phase plans:
 
 When reporting any gate decision, include a schema-compliant object (matching `schemas/atlas.gate-event.schema.json`) and then a concise human-readable summary.
 
-### Plan File Template
+### Templates
 
-Plans must follow this structure at `<plan-directory>/<task-name>-plan.md`:
+Templates are externalized to reduce context overhead. Load on demand:
+- Plan file structure: `plans/templates/plan-document-template.md`
+- Phase completion report: `plans/templates/phase-completion-template.md`
+- Gate events, plan completion, and commit format: `plans/templates/gate-event-template.md`
+- Verified items for regression tracking: `plans/templates/verified-items-template.md`
 
-```
-## Plan: {Task Title}
-
-**TL;DR:** One-line summary of what this plan accomplishes.
-
-### Phases (N total)
-
-#### Phase 1 — {Phase Title}
-- **Objective:** What this phase accomplishes.
-- **Files:** List of files to create/modify.
-- **Tests:** Tests to add or update.
-- **Steps:**
-  1. Step description (describe changes, no inline code blocks in plan).
-  2. ...
-
-#### Phase 2 — {Phase Title}
-...
-
-### Open Questions
-- Unresolved items that need clarification before or during execution.
-```
-
-Rules:
-- NO code blocks inside the plan — describe changes in prose.
+### Template Rules
+- NO code blocks inside plans — describe changes in prose.
 - NO manual testing steps — all verification must be automatable.
 - Each phase must be incremental and self-contained with TDD approach.
 - Phase count: 3–10 (decompose further if >10 phases needed).
-
-### Phase Completion Template
-
-After each phase, produce `<plan-name>-phase-<N>-complete.md`:
-
-```
-## Phase {N} Complete: {Phase Title}
-
-**TL;DR:** One-line summary of what was accomplished.
-
-### Changes
-- Files modified: [list]
-- Functions added/changed: [list]
-- Tests added/changed: [list]
-
-### Review Status
-{APPROVED | NEEDS_REVISION | FAILED}
-
-### Commit Message
-{See Commit Message Format below}
-```
-
-### Plan Completion Template
-
-After all phases, produce `<plan-name>-complete.md`:
-
-```
-## Plan Complete: {Task Title}
-
-**Summary:** What was accomplished across all phases.
-
-### Phases Completed
-- ✅ Phase 1 — {Title}
-- ✅ Phase 2 — {Title}
-- ...
-
-### All Files Modified
-[Complete list]
-
-### Key Functions/Components
-[List of main additions or changes]
-
-### Test Coverage
-[Summary of test additions and results]
-
-### Recommendations
-[Follow-up work or improvements if any]
-```
-
-### Commit Message Format
-
-```
-fix|feat|chore|test|refactor: Short description (max 50 chars)
-
-- Bullet point details of the change.
-- Additional context if needed.
-```
-
-Rules:
+- Commit prefix must be one of: `fix`, `feat`, `chore`, `test`, `refactor`.
 - Do NOT reference plan names or phase numbers in commit messages.
-- Prefix must be one of: `fix`, `feat`, `chore`, `test`, `refactor`.
-- Body bullets are optional but recommended for multi-file changes.
 
 ## Non-Negotiable Rules
 

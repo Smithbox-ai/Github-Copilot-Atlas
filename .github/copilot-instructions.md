@@ -22,3 +22,19 @@ Agent engineering policies are in `docs/agent-engineering/`:
 - `RELIABILITY-GATES.md` — Verification gate requirements (build/tests/lint).
 - `CLARIFICATION-POLICY.md` — When to invoke `vscode/askQuestions` vs. return `NEEDS_INPUT`.
 - `TOOL-ROUTING.md` — Routing rules for external tools (fetch, githubRepo, MCP).
+
+## Agent System
+13 agents in the Atlas system:
+- **Orchestration:** Atlas
+- **Planning:** Prometheus
+- **Adversarial Review:** Challenger-subagent, Skeptic-subagent
+- **Executability Verification:** DryRun-subagent
+- **Implementation:** Sisyphus-subagent, Frontend-Engineer-subagent, DevOps-subagent
+- **Review:** Code-Review-subagent
+- **Research:** Oracle-subagent, Scout-subagent
+- **Documentation:** DocWriter-subagent
+- **Testing:** BrowserTester-subagent
+
+Quantitative scoring reference: `docs/agent-engineering/SCORING-SPEC.md`
+Complexity tiers: TRIVIAL / SMALL / MEDIUM / LARGE (see `plans/project-context.md`)
+Skill library: `skills/index.md`

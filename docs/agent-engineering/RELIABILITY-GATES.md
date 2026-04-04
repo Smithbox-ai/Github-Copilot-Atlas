@@ -138,3 +138,40 @@ Acceptance gate:
 - Plans with `HIGH`-impact applicable risk entries and no corresponding research phase or `resolved` disposition are non-compliant.
 - Challenger must check the `risk_review` field when `audit_scope` includes `performance` focus area.
 - A missing `risk_review` array in the plan schema is a schema validation failure — the plan is rejected before Challenger review.
+
+## 10) Scoring Reliability
+Goal: quantitative scores must be reproducible given identical findings.
+
+Required controls:
+- Scoring uses discrete, countable inputs (mirage count, orphaned requirements, blocked tasks) — not subjective ratings.
+- Formulas are mathematical operations on counted evidence, defined in `docs/agent-engineering/SCORING-SPEC.md`.
+- Cross-validated ceilings are applied deterministically: same Skeptic/DryRun evidence → same ceiling applied.
+- Verdict thresholds are fixed numeric boundaries (≥75%, 60-74%, <60%).
+
+Acceptance gate:
+- Given identical plan audit findings, the scoring dimensions and final percentage are reproducible.
+- Ceiling rules produce the same cap given the same mirage/blocker counts.
+
+## 11) Regression Gate
+Goal: verified plan items must not regress without BLOCKING classification.
+
+Required controls:
+- Items verified in iteration N that fail in iteration N+1 are automatically classified as BLOCKING regressions.
+- Regression tracking uses the Verified Items Registry (`plans/templates/verified-items-template.md`).
+- Regressions override the severity of the underlying finding — a MINOR finding that regresses becomes BLOCKING.
+
+Acceptance gate:
+- No previously-verified item silently reverts to failing status.
+- Regressions appear in `validated_blocking_issues` regardless of original severity.
+
+## 12) Skill Routing Reliability
+Goal: selected skills must match the task domain and be loadable by implementation agents.
+
+Required controls:
+- Prometheus selects skills from `skills/index.md` based on keyword matching against the domain mapping table.
+- Selected skill file paths are included in phase `skill_references` and resolve to existing files.
+- Implementation agents load referenced skills before executing phase tasks.
+
+Acceptance gate:
+- Every `skill_references` path resolves to an existing file in `skills/patterns/`.
+- Selected skills are relevant to the task domain (no random skill selection).

@@ -1,0 +1,16 @@
+{
+  "scenario_id": "iterative-review-convergence-01",
+  "target_agent": "Atlas",
+  "goal": "Verify Atlas iteration loop terminates correctly on score stagnation",
+  "description": "When Challenger and Skeptic return scores that improve less than 5% over 2 consecutive iterations, Atlas should detect stagnation and present findings to user instead of continuing to iterate.",
+  "input": {
+    "iteration_scores": [62, 64, 65],
+    "max_iterations": 5,
+    "stagnation_threshold_percent": 5
+  },
+  "expected": {
+    "stagnation_detected": true,
+    "iterations_run": 3,
+    "user_escalation": true
+  }
+}

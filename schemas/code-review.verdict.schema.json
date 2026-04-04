@@ -17,7 +17,7 @@
     "next_steps"
   ],
   "properties": {
-    "schema_version": { "type": "string", "const": "1.1.0" },
+    "schema_version": { "type": "string", "const": "1.2.0" },
     "agent": { "type": "string", "const": "Code-Review-subagent" },
     "status": {
       "type": "string",
@@ -70,6 +70,33 @@
           "file": { "type": "string" },
           "line": { "type": "integer", "minimum": 1 }
         }
+      }
+    },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Quantitative weighted scoring per SCORING-SPEC.md. Optional — omit when ABSTAIN.",
+      "required": ["dimensions", "weighted_sum", "max_possible", "percentage"],
+      "properties": {
+        "dimensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "raw_score", "weight"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "enum": ["correctness", "completeness", "test_quality", "code_quality", "security"]
+              },
+              "raw_score": { "type": "number", "minimum": 0, "maximum": 5 },
+              "weight": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "weighted_sum": { "type": "number", "minimum": 0 },
+        "max_possible": { "type": "number", "minimum": 0 },
+        "percentage": { "type": "number", "minimum": 0, "maximum": 100 }
       }
     },
     "verification_gates": {

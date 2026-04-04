@@ -1,0 +1,44 @@
+{
+  "scenario_id": "complexity-gate-routing-01",
+  "target_agent": "Atlas",
+  "goal": "Verify complexity tier determines correct pipeline depth",
+  "description": "Atlas should route plans through different review pipeline depths based on complexity_tier: TRIVIAL skips PLAN_REVIEW entirely, SMALL runs Challenger only, MEDIUM runs Challenger+Skeptic, LARGE runs full pipeline with DryRun.",
+  "inputs": [
+    {
+      "complexity_tier": "TRIVIAL",
+      "expected": {
+        "challenger_dispatched": false,
+        "skeptic_dispatched": false,
+        "dryrun_dispatched": false,
+        "plan_review_skipped": true
+      }
+    },
+    {
+      "complexity_tier": "SMALL",
+      "expected": {
+        "challenger_dispatched": true,
+        "skeptic_dispatched": false,
+        "dryrun_dispatched": false,
+        "max_iterations": 2
+      }
+    },
+    {
+      "complexity_tier": "MEDIUM",
+      "expected": {
+        "challenger_dispatched": true,
+        "skeptic_dispatched": true,
+        "dryrun_dispatched": false,
+        "max_iterations": 5
+      }
+    },
+    {
+      "complexity_tier": "LARGE",
+      "expected": {
+        "challenger_dispatched": true,
+        "skeptic_dispatched": true,
+        "dryrun_dispatched": true,
+        "max_iterations": 5
+      }
+    }
+  ]
+}

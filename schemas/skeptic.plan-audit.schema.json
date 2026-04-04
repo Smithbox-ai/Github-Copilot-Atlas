@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://copilot-atlas.local/schemas/skeptic.plan-audit.schema.json",
+  "title": "SkepticPlanAudit",
+  "description": "Output schema for the Skeptic adversarial mirage detector. Validates plan claims against codebase reality using 17 systematic mirage patterns.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "agent",
+    "status",
+    "confidence",
+    "abstain",
+    "plan_reference",
+    "mirage_findings",
+    "scoring",
+    "recommendation"
+  ],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "agent": { "type": "string", "const": "Skeptic-subagent" },
+    "status": {
+      "type": "string",
+      "enum": ["COMPLETE", "ABSTAIN"],
+      "description": "COMPLETE: mirage scan finished with findings. ABSTAIN: insufficient evidence to evaluate."
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence in the audit. Below 0.7 triggers automatic ABSTAIN."
+    },
+    "abstain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_abstaining", "reasons"],
+      "properties": {
+        "is_abstaining": { "type": "boolean" },
+        "reasons": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "plan_reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["plan_path", "phase_count"],
+      "properties": {
+        "plan_path": { "type": "string" },
+        "phase_count": { "type": "integer", "minimum": 1 },
+        "plan_title": { "type": "string" }
+      }
+    },
+    "mirage_findings": {
+      "type": "array",
+      "description": "List of detected mirages. Each finding maps to one of the 17 mirage patterns.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pattern_id", "pattern_name", "classification", "severity", "claim", "verdict"],
+        "properties": {
+          "pattern_id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 17,
+            "description": "1-17 corresponding to the mirage pattern catalog."
+          },
+          "pattern_name": {
+            "type": "string",
+            "enum": [
+              "phantom_api",
+              "version_mismatch",
+              "pattern_mismatch",
+              "missing_dependency",
+              "file_path_hallucination",
+              "schema_mismatch",
+              "integration_fantasy",
+              "scope_creep",
+              "test_infrastructure_mismatch",
+              "concurrency_blindness",
+              "missing_error_path",
+              "missing_validation",
+              "missing_edge_case",
+              "missing_requirement",
+              "missing_cleanup",
+              "missing_migration",
+              "missing_security_boundary"
+            ]
+          },
+          "classification": {
+            "type": "string",
+            "enum": ["PRESENCE_MIRAGE", "ABSENCE_MIRAGE"],
+            "description": "Patterns 1-10 are presence mirages (false positives). Patterns 11-17 are absence mirages (false negatives)."
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["BLOCKING", "IMPORTANT", "MINOR"]
+          },
+          "claim": {
+            "type": "string",
+            "description": "The specific claim or assumption being evaluated."
+          },
+          "evidence": {
+            "type": "string",
+            "description": "Evidence supporting the verdict — file paths, actual code, or documentation references."
+          },
+          "verdict": {
+            "type": "string",
+            "enum": ["VERIFIED", "UNVERIFIED", "MIRAGE"],
+            "description": "VERIFIED: claim confirmed true. UNVERIFIED: could not confirm. MIRAGE: claim confirmed false."
+          }
+        }
+      }
+    },
+    "scoring": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Quantitative scoring across 5 dimensions, each scored 0-5. Total max: 25.",
+      "required": ["dimensions", "total_score", "max_possible", "percentage"],
+      "properties": {
+        "dimensions": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "raw_score", "formula"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "enum": ["assumption_validity", "error_coverage", "integration_reality", "scope_fidelity", "dependency_accuracy"]
+              },
+              "raw_score": { "type": "number", "minimum": 0, "maximum": 5 },
+              "formula": { "type": "string", "description": "Human-readable formula showing how the score was calculated." }
+            }
+          }
+        },
+        "total_score": { "type": "number", "minimum": 0, "maximum": 25 },
+        "max_possible": { "type": "number", "const": 25 },
+        "percentage": { "type": "number", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "recommendation": {
+      "type": "string",
+      "description": "Concise recommendation for Atlas: proceed, investigate specific mirages, or revise plan."
+    },
+    "failure_classification": {
+      "type": "string",
+      "enum": ["fixable", "needs_replan", "escalate"],
+      "description": "Required when mirages with BLOCKING severity are found."
+    }
+  }
+}

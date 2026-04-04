@@ -51,3 +51,5 @@ Prefer least-privilege grants: do not grant tools solely for speculative future 
 | DevOps | ✅ | ✅ | ❌ | Infrastructure; fetch for provider docs |
 | DocWriter | ✅ | ❌ | ❌ | Documentation; fetch for external refs |
 | BrowserTester | ✅ | ❌ | ❌ | Testing; fetch for test framework docs |
+| Skeptic | ❌ | ❌ | ❌ | Read-only local mirage detection |
+| DryRun | ❌ | ❌ | ❌ | Read-only local executability simulation |

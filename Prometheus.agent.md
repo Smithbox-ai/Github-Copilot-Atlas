@@ -40,6 +40,18 @@ Produce implementation plans that are deterministic, schema-compliant, and execu
   - **dependency**: applicable if the task calls external services, installs new packages, or upgrades existing ones. Verify behavioral contracts from local code or external docs.
   - **operability**: applicable if the task deploys new services, changes infrastructure, or alters observability surfaces.
   Record findings in the `risk_review` array. Any category with `applicability: applicable` AND `impact: HIGH` that cannot be resolved from available evidence MUST set `disposition: research_phase_added` and trigger a dedicated research phase BEFORE implementation phases.
+0.7. Complexity Gate: AFTER semantic risk evaluation and BEFORE research delegation, classify the task complexity and emit `complexity_tier` in the plan output:
+  - **TRIVIAL** (≤2 files, single concern): Skip Skeptic and DryRun dispatch. Challenger evaluates only Correctness and Completeness dimensions. 1-iteration review max.
+  - **SMALL** (3–5 files, single domain): Skip Performance and Security scoring dimensions. Skeptic runs lite mode (top 5 patterns only). 2-iteration review max.
+  - **MEDIUM** (6–15 files, cross-domain): Full review pipeline. All agents active. Up to 5-iteration review.
+  - **LARGE** (15+ files, cross-cutting concerns): Full review + mandatory Oracle pre-research phase. All agents active. Up to 5-iteration review.
+  Classification heuristic: count unique files in the change set, assess whether changes cross domain boundaries (multiple agent files, schema + agent, frontend + backend), and check for infrastructure/deployment impact.
+0.8. Skill Selection: AFTER complexity classification and BEFORE research delegation, select relevant domain skills:
+  1. Read `skills/index.md` to load the domain mapping table.
+  2. Match task keywords and domain signals against the index.
+  3. Select ≤3 most relevant skill files based on task context and complexity tier.
+  4. Include selected skill file paths in each applicable phase's `skill_references` array.
+  Implementation agents load referenced skills before executing phase tasks.
 1. Research (delegate Scout-subagent/Oracle when scope is large).
 2. Design (architecture choices and constraints).
 3. Planning (phase decomposition with quality gates).
@@ -89,6 +101,7 @@ If external knowledge is missing, use Context7 or `web/fetch` before finalizing.
 - `docs/agent-engineering/CLARIFICATION-POLICY.md`
 - `docs/agent-engineering/TOOL-ROUTING.md`
 - `plans/project-context.md` (if present)
+- `skills/index.md` (domain skill mapping — read during Step 0.8)
 - Plan artifacts directory: `plans/` (default location for all plan and completion files)
 
 ## Tools
@@ -136,84 +149,9 @@ When complete, follow this output procedure in mandatory order:
 
 ### Plan Document Template
 
-The markdown plan file must follow this structure:
+Template is externalized to `plans/templates/plan-document-template.md`. Load on demand when creating plan files.
 
-```
-## Plan: {Task Title}
-
-**Summary:** High-level description of the task and approach.
-
-### Context & Analysis
-- Current state of relevant code/systems.
-- Key constraints and requirements.
-- Architecture decisions and rationale.
-
-### Implementation Phases
-
-#### Phase 1 — {Phase Title}
-- **Objective:** What this phase accomplishes.
-- **Executor Agent:** Primary subagent Atlas must dispatch for this phase. Required in the JSON plan and must match the supported executor set in `plans/project-context.md`.
-- **Wave:** Execution wave number (phases in the same wave run in parallel).
-- **Dependencies:** Prerequisites (files, decisions, prior phases by ID).
-- **Files:** Files to create/modify.
-- **Tests:** Tests to add or update.
-- **Failure Expectations:** Likely failure modes with classification (transient/fixable/needs_replan/escalate) and mitigation.
-- **Steps:**
-  1. Step description in prose (no code blocks in plan).
-  2. ...
-
-#### Phase 2 — {Phase Title}
-...
-
-### Inter-Phase Contracts
-Define data and interface contracts between phases that have dependencies:
-- **From Phase → To Phase:** Description of interface/data contract.
-- **Format:** Expected output format from the upstream phase.
-- **Validation:** How the downstream phase verifies the contract is met.
-
-### Open Questions
-- Items requiring clarification before or during execution.
-
-### Risks
-- Identified risks with mitigation strategies.
-
-### Semantic Risk Review
-Mandatory checklist — evaluate every category. Non-applicable entries must still appear with `applicability: not_applicable`.
-
-| Category | Applicability | Impact | Evidence Source | Disposition |
-|---|---|---|---|---|
-| data_volume | applicable / not_applicable / uncertain | HIGH/MEDIUM/LOW/UNKNOWN | file or query | resolved / open_question / research_phase_added / not_applicable |
-| performance | ... | ... | ... | ... |
-| concurrency | ... | ... | ... | ... |
-| access_control | ... | ... | ... | ... |
-| migration_rollback | ... | ... | ... | ... |
-| dependency | ... | ... | ... | ... |
-| operability | ... | ... | ... | ... |
-
-### Success Criteria
-- Measurable criteria for plan completion.
-
-### Notes for Atlas
-- Recommended execution order and parallelization opportunities.
-- Wave assignments and dependency graph.
-- `executor_agent` is the authoritative per-phase routing field. Optional delegation notes may name supporting agents, but must not conflict with the declared primary executor.
-- Max parallel agents recommendation (default: 10, reduce if resource-intensive phases).
-- Failure expectations summary per wave.
-
-### Architecture Visualization (Mandatory for 3+ phase plans)
-When a plan contains 3 or more phases, include a visualization section with Mermaid diagrams.
-
-Allowed diagram types:
-- `flowchart TD` — Phase dependency DAG showing execution order and wave grouping.
-- `sequenceDiagram` — Inter-phase data flow and handoff sequence.
-- `stateDiagram-v2` — State machine visualization for complex branching or lifecycle logic.
-
-Include at minimum:
-1. A phase dependency DAG (`flowchart TD`) showing which phases depend on which, grouped by wave.
-2. One additional diagram (sequence or state) if the plan involves complex inter-phase contracts or state transitions.
-
-Keep diagrams compact. Each diagram should fit within 30 lines of Mermaid source.
-```
+The plan file structure must remain consistent with `schemas/prometheus.plan.schema.json`.
 
 ### Plan Quality Standards
 

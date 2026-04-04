@@ -18,8 +18,10 @@ Checklist version: 9-item (includes clarification triggers and tool-routing rule
 | DevOps | ✅ | None (resolved: clarification triggers, tool-routing rules) | Complete |
 | DocWriter | ✅ | None (resolved: approval gate statement, tool-routing rules) | Complete |
 | BrowserTester | ✅ | None (resolved: approval gate statement, tool-routing rules) | Complete |
+| Skeptic | ✅ | None | Complete |
+| DryRun | ✅ | None | Complete |
 
-Compliance rate: 11/11 (100%) against 9-item checklist
+Compliance rate: 13/13 (100%) against 9-item checklist
 
 ## Recently Resolved Gaps
 
@@ -96,6 +98,22 @@ All 8 agents previously targeted for Phase 3a now meet the 9-item checklist:
 - **DevOps**: Added full Approval Gates table (Prompt), External Tool Routing rules (Tools), Uncertainty Protocol → `NEEDS_INPUT` delegation (Non-Negotiable Rules).
 - **DocWriter**: Added Human Approval Gates statement (Tools), External Tool Routing rules (Tools), Uncertainty Protocol → `NEEDS_INPUT` delegation (Non-Negotiable Rules).
 - **BrowserTester**: Added Human Approval Gates statement (Tools), External Tool Routing rules (Tools), Uncertainty Protocol → `NEEDS_INPUT` delegation (Non-Negotiable Rules).
+
+### Atlas Modernization (2026-04-04)
+
+Comprehensive modernization of the Atlas agent system. Changes across 9 phases:
+
+1. **New Agents:** Skeptic-subagent (17 mirage detection patterns, quantitative scoring), DryRun-subagent (cold-start plan executability simulation with 8-point checklist and 7-step walkthrough).
+2. **Quantitative Scoring:** 7-dimension weighted scoring system for Challenger (plan-level) and 5-dimension for Code-Review (code-level). Cross-validated ceilings between Skeptic, Challenger, and DryRun. Single source of truth: `docs/agent-engineering/SCORING-SPEC.md`.
+3. **5-Iteration Plan Review Loop:** Atlas PLAN_REVIEW upgraded from 2 to 5 max iterations with convergence detection (stagnation threshold: <5% improvement over 2 consecutive iterations).
+4. **Complexity Gate:** Prometheus classifies tasks as TRIVIAL/SMALL/MEDIUM/LARGE. Atlas adjusts pipeline depth accordingly (TRIVIAL skips review entirely, LARGE forces full pipeline).
+5. **Template Externalization:** Embedded templates extracted to `plans/templates/` (4 files). Reduces Atlas token overhead by ~800-900 tokens per invocation.
+6. **Skill Library:** `skills/` directory with index and 4 domain pattern files (TDD, error handling, security, performance). Prometheus selects relevant skills during planning.
+7. **Per-Issue Validation:** Code-Review now executes 4-step validation protocol for CRITICAL/MAJOR findings. False positives documented with rejection reasons.
+8. **Regression Tracking:** Verified items tracked across plan review iterations. Regressions automatically become BLOCKING issues.
+9. **Observability:** trace_id (UUID v4) propagated through all gate events and delegation payloads for log correlation.
+
+Agent count: 11 → 13. Schema count: 13 → 15. Eval scenario count: 29 → 35.
 
 ## Gap Details
 
