@@ -113,8 +113,16 @@ Comprehensive modernization of the Orchestrator agent system. Changes across 9 p
 8. **Regression Tracking:** Verified items tracked across plan review iterations. Regressions automatically become BLOCKING issues.
 9. **Observability:** trace_id (UUID v4) propagated through all gate events and delegation payloads for log correlation.
 
-Agent count: 11 → 13. Schema count: 13 → 15. Eval scenario count: 29 → 37.
+Agent count: 11 → 13. Schema count: 13 → 15. Eval scenario count: 29 → 37 → 40.
 
 ## Gap Details
 
 No remaining gaps. All 13 agents are fully compliant with the 9-item P.A.R.T checklist. (Agent count increased from 11 → 13 in modernization 2026-04-04 with the addition of AssumptionVerifier-subagent and ExecutabilityVerifier-subagent.)
+
+### Implementer Rationalization (2026-04-05)
+Investigated whether the 3-implementer split (Core/UI/Platform) should be collapsed. Decision: preserve 13-agent roster. Evidence-based rationale documented in `docs/agent-engineering/MIGRATION-CORE-FIRST.md` — Phase 4. Key finding: delegation payloads, execution schemas, tool grants, and eval assertions are materially different across the three roles. Internal backbone convergence completed; external consolidation deferred pending 6 explicit exit criteria.
+
+Previously under-tested agents now have direct eval coverage:
+- `evals/scenarios/code-reviewer-contract.json` (CodeReviewer-subagent)
+- `evals/scenarios/code-mapper-contract.json` (CodeMapper-subagent)
+- `evals/scenarios/implementer-role-differentiation.json` (role uniqueness guard)

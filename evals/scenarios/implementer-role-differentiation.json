@@ -1,0 +1,44 @@
+{
+  "id": "implementer-role-differentiation",
+  "target_agent": "Orchestrator",
+  "goal": "Verify that UI and platform implementation roles produce materially different execution evidence that would break under naive consolidation",
+  "description": "Structural validation that the three implementer execution-report schemas require distinct evidence surfaces. If this scenario were to pass with a single merged schema, it would indicate the roles are safe to consolidate. Currently it asserts they are not.",
+  "input": {
+    "context": "Compare schemas/core-implementer.execution-report.schema.json, schemas/ui-implementer.execution-report.schema.json, and schemas/platform-engineer.execution-report.schema.json"
+  },
+  "expected": {
+    "ui_only_fields": [
+      "ui_changes",
+      "accessibility",
+      "responsive"
+    ],
+    "platform_only_fields": [
+      "health_checks",
+      "deployment_details",
+      "approval_gates_passed"
+    ],
+    "platform_conditional_fields": {
+      "on_failed": ["rollback_steps_taken"],
+      "on_production": ["approval_gates_passed"]
+    },
+    "core_baseline_fields": [
+      "changes",
+      "tests",
+      "build",
+      "lint"
+    ],
+    "tool_grant_difference": {
+      "core_extra": ["agent"],
+      "evidence": "governance/tool-grants.json"
+    },
+    "delegation_payload_difference": {
+      "core_optional": ["context_files"],
+      "ui_optional": ["design_refs"],
+      "platform_required": ["environment"],
+      "platform_optional": ["requires_approval", "security_sensitive"],
+      "evidence": "schemas/orchestrator.delegation-protocol.schema.json"
+    },
+    "consolidation_blocked": true,
+    "reason": "Roles have UNIQUE delegation payloads, UNIQUE schema output fields, and non-identical tool grants"
+  }
+}

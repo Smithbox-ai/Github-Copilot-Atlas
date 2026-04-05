@@ -89,3 +89,45 @@ Comprehensive bishx-inspired upgrade across 9 implementation phases.
 **Eval coverage:** 29 → 35 eval scenarios. Schema count: 13 → 15.
 
 Full implementation details: `plans/atlas-modernization-plan.md`.
+
+## Phase 4: Implementer Rationalization (2026-04-05)
+
+Executor-preserving internal convergence of the implementation trio.
+
+**Decision:** Keep 13-agent roster. Preserve all external executor identities, schema contracts, and tool grants. Internal convergence only.
+
+**Evidence baseline:** Phase 1 research confirmed 6 no-go conditions for external consolidation:
+1. Three distinct delegation payloads in `schemas/orchestrator.delegation-protocol.schema.json`.
+2. Non-identical tool grants — Core has extra `agent` grant.
+3. Different required schema output fields (UI: accessibility/responsive; Platform: health_checks/rollback).
+4. Different eval assertions across the three contract fixtures.
+5. Different Definition of Done semantics bound to external identity.
+6. Executor set in `plans/project-context.md` still routes to three distinct roles.
+
+**Shared Implementation Backbone:**
+All three implementer agents follow the same structural rhythm:
+1. Read standards → PreFlect risk evaluation → Execute domain work → Verify gates → Emit structured report.
+2. Deterministic Contracts: schema-governed output, shared status enum, shared failure classification.
+3. Planning vs Acting Split: execute-only, no global replan, targeted clarification routing.
+4. Archive: context compaction + NOTES.md updates with scope-specific fields.
+5. Non-Negotiable Rules: no out-of-scope files, no fabricated evidence, ABSTAIN on uncertainty.
+6. Uncertainty Protocol: `NEEDS_INPUT` with `clarification_request` per `CLARIFICATION-POLICY.md`.
+
+CoreImplementer-subagent is the canonical backbone reference. UIImplementer-subagent and PlatformEngineer-subagent extend it with domain-specific sections:
+- **UIImplementer additions:** accessibility gates, responsive checks, design-system compliance, Frontend Best Practices Checklist.
+- **PlatformEngineer additions:** approval gates, idempotency mandate, rollback protocol, health checks, environment prerequisites.
+
+**Eval hardening:**
+- Added `evals/scenarios/code-reviewer-contract.json` — direct CodeReviewer contract fixture.
+- Added `evals/scenarios/code-mapper-contract.json` — direct CodeMapper contract fixture.
+- Added `evals/scenarios/implementer-role-differentiation.json` — guards against accidental role collapse.
+- Eval count: 37 → 40. Validator: 161/161 passing.
+
+**Future exit criteria for external consolidation:**
+External consolidation (reducing implementer count) is not planned but remains possible if ALL of these conditions are intentionally satisfied in a future migration:
+1. Single canonical delegation payload envelope in `schemas/orchestrator.delegation-protocol.schema.json`.
+2. Single canonical tool grant profile in `governance/tool-grants.json`.
+3. Single or composed execution-report schema covering UI and platform evidence surfaces.
+4. Rewritten eval fixtures testing one executor against the full evidence set.
+5. Role-specific DoD gates moved from external identity into task metadata.
+6. Executor set and role matrix updated in `plans/project-context.md`.

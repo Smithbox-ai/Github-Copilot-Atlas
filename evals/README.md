@@ -42,6 +42,9 @@ Structural validation fixtures for the ControlFlow multi-agent system. These sce
 - `scenarios/browser-tester-contract.json` — BrowserTester execution contract
 - `scenarios/executability-verifier-contract.json` — ExecutabilityVerifier execution contract
 - `scenarios/assumption-verifier-contract.json` — AssumptionVerifier execution contract
+- `scenarios/code-reviewer-contract.json` — CodeReviewer verdict contract
+- `scenarios/code-mapper-contract.json` — CodeMapper discovery contract
+- `scenarios/implementer-role-differentiation.json` — Implementer role uniqueness guard
 
 ### Orchestration
 - `scenarios/wave-execution.json`

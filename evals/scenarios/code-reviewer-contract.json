@@ -1,0 +1,30 @@
+{
+  "id": "code-reviewer-contract",
+  "target_agent": "CodeReviewer-subagent",
+  "goal": "Code review verdict is schema-compliant, includes validated_blocking_issues array, and enforces 4-step validation protocol",
+  "input": {
+    "task": "Review scoped backend change for correctness, security, and test coverage",
+    "phase_id": 1,
+    "changed_files": ["src/example.ts"]
+  },
+  "expected": {
+    "schema": "schemas/code-reviewer.verdict.schema.json",
+    "required_status": [
+      "APPROVED",
+      "NEEDS_REVISION",
+      "FAILED",
+      "ABSTAIN"
+    ],
+    "must_include": [
+      "issues",
+      "validated_blocking_issues",
+      "verification_gates",
+      "security_checks",
+      "confidence"
+    ],
+    "validation_protocol": {
+      "description": "Every CRITICAL or MAJOR issue must have validation_status populated as confirmed, rejected, or unvalidated",
+      "blocking_gate": "Orchestrator blocks only on validated_blocking_issues, not raw issues array"
+    }
+  }
+}

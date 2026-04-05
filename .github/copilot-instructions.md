@@ -29,6 +29,9 @@ Agent engineering policies are in `docs/agent-engineering/`:
 - `CLARIFICATION-POLICY.md` — When to invoke `vscode/askQuestions` vs. return `NEEDS_INPUT`.
 - `TOOL-ROUTING.md` — Routing rules for external tools (fetch, githubRepo, MCP).
 - `SCORING-SPEC.md` — Quantitative scoring reference.
+- `COMPLIANCE-GAPS.md` — Known spec compliance gaps and in-progress remediations.
+- `GOVERNANCE-WEIGHT-AUDIT.md` — Governance weight audit results for each agent.
+- `MIGRATION-CORE-FIRST.md` — Guide for migrating agents to current core-first patterns.
 
 ## Conventions
 - Agent files live at repo root: `<Name>.agent.md` or `<Name>-subagent.agent.md`.
@@ -36,6 +39,7 @@ Agent engineering policies are in `docs/agent-engineering/`:
 - All agent outputs use **structured text**. Do NOT output raw JSON to chat — it wastes context tokens.
 - Skill library is at `skills/index.md`. Planner selects ≤3 skills per plan phase.
 - Failure taxonomy applies to all agents; PlanAuditor and AssumptionVerifier exclude `transient`.
+- P.A.R.T. section order in every agent file: **Prompt → Archive → Resources → Tools** (see `PART-SPEC.md`).
 
 ## Agent System
 13 agents in the ControlFlow system:
@@ -50,3 +54,11 @@ Agent engineering policies are in `docs/agent-engineering/`:
 - **Testing:** BrowserTester-subagent
 
 Complexity tiers: TRIVIAL / SMALL / MEDIUM / LARGE — see `plans/project-context.md`.
+
+**Agent entry points:**
+| Scenario | Agent |
+|----------|-------|
+| Vague goal or idea | `@Planner` — runs idea interview, produces phased plan |
+| Detailed task with clear requirements | `@Orchestrator` — dispatches subagents, manages gates |
+| Deep research question | `@Researcher` — evidence-based investigation |
+| Quick codebase exploration | `@CodeMapper` — read-only discovery |
