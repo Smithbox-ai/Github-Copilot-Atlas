@@ -9,10 +9,10 @@
   ],
   "expected": {
     "schema": "schemas/planner.plan.schema.json",
+    "risk_review_present": true,
+    "plan_file_created": true,
     "allowed_status": [
-      "READY_FOR_EXECUTION",
-      "ABSTAIN",
-      "REPLAN_REQUIRED"
+      "READY_FOR_EXECUTION"
     ],
     "must_include": [
       "phases",

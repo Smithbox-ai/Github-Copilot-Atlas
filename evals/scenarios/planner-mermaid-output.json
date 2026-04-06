@@ -14,9 +14,10 @@
           "Must produce Mermaid visualizations per plan quality standards"
         ]
       },
-      "expected_output": {
-        "schema_version": "1.0.0",
+      "expected": {
+        "schema_version": "1.2.0",
         "agent": "Planner",
+        "risk_review_present": true,
         "phases_min_count": 3,
         "diagrams_required": true,
         "diagrams_min_count": 1,
@@ -33,9 +34,10 @@
         "task_description": "Simple 2-phase bug fix with test addition and implementation",
         "constraints": []
       },
-      "expected_output": {
-        "schema_version": "1.0.0",
+      "expected": {
+        "schema_version": "1.2.0",
         "agent": "Planner",
+        "risk_review_present": true,
         "phases_max_count": 2,
         "diagrams_required": false
       }
@@ -50,9 +52,10 @@
           "Has inter-phase data contracts"
         ]
       },
-      "expected_output": {
-        "schema_version": "1.0.0",
+      "expected": {
+        "schema_version": "1.2.0",
         "agent": "Planner",
+        "risk_review_present": true,
         "phases_min_count": 3,
         "diagrams_required": true,
         "diagrams_min_count": 2,
@@ -70,6 +73,6 @@
     "Each diagram has non-empty title and mermaid_source fields",
     "Diagram mermaid_source is valid Mermaid syntax",
     "Plans with fewer than 3 phases may omit diagrams",
-    "Output conforms to schemas/planner.plan.schema.json"
+    "Output conforms to schemas/planner.plan.schema.json version 1.2.0"
   ]
 }

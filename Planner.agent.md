@@ -27,11 +27,11 @@ Produce implementation plans that are deterministic, schema-compliant, and execu
 ### Deterministic Contracts
 - Output must conform to `schemas/planner.plan.schema.json`.
 - Every phase MUST declare exactly one machine-readable `executor_agent` from the supported executor set in `plans/project-context.md`.
-- If confidence is below threshold or evidence is missing, set status to `ABSTAIN` or `REPLAN_REQUIRED`.
+- If confidence is below 0.9 (see `governance/runtime-policy.json` `confidence_threshold`) or evidence is missing, set status to `ABSTAIN` or `REPLAN_REQUIRED`. Use `ABSTAIN` when evidence is insufficient to decompose even after clarification and research. Use `REPLAN_REQUIRED` when scope is understood but the current design is invalidated (dependency changed, architectural assumption reversed). Both statuses require a markdown plan artifact with diagnostics and a recovery next step.
 
 ### Mandatory Workflow Procedure
 1. Idea Interview Gate: BEFORE the Clarification Gate, evaluate whether the user request is vague or abstract. Trigger condition: the request contains **all three** of — (a) no specific file names or paths, (b) no concrete acceptance criteria, (c) no explicit technology or constraint named. If triggered, load `skills/patterns/idea-to-prompt.md` and execute the 5-step interview protocol using `vscode/askQuestions`. Replace the original vague request with the structured prompt assembled at the end of Step 5. Skip this gate entirely if any single concrete signal is present (a file path, an agent name, a schema reference, or a measurable goal).
-2. Clarification Gate: BEFORE proceeding to Design, evaluate the request against ALL five mandatory clarification classes in `docs/agent-engineering/CLARIFICATION-POLICY.md`. If ANY class matches, STOP and call `vscode/askQuestions` with 2-3 concrete options, affected files/components, and a recommended option with rationale. Do NOT proceed to Design until clarification is resolved or explicitly determined non-applicable.
+2. Clarification Gate: BEFORE proceeding to Design, evaluate the request against ALL five mandatory clarification classes in `docs/agent-engineering/CLARIFICATION-POLICY.md`. If ANY class matches, STOP and call `vscode/askQuestions` with 2-3 concrete options, affected files/components, and a recommended option with rationale. Do NOT proceed to Design until clarification is resolved or explicitly determined non-applicable. Decision rule: `vscode/askQuestions` is mandatory when competing interpretations change the top-level file set, `executor_agent`, architecture shape, or user-facing behavior. Do NOT call `vscode/askQuestions` for questions answerable by reading the codebase, when all options converge to equivalent outputs, or when the choice is a style or implementation detail already covered by existing configuration.
 3. Semantic Risk Discovery Gate: AFTER clarification and BEFORE research delegation, evaluate all 7 semantic risk categories from `plans/project-context.md`. For each category, assess applicability, impact, and evidence source. Follow these heuristics:
   - **data_volume**: applicable if the task touches tables, datasets, batch operations, or pagination. Look for `SELECT *`, unbounded queries, missing `LIMIT` clauses, migration of large tables.
   - **performance**: applicable if the task modifies query paths, aggregations, sorting, or adds algorithmic logic. Check for N+1 patterns, missing indexes, computed columns in hot paths.
@@ -67,7 +67,13 @@ Return `ABSTAIN` only when:
 - Clarification was attempted via `vscode/askQuestions` but the response did not resolve the ambiguity.
 - Evidence does not support stable decomposition even after research delegation.
 
+Return `REPLAN_REQUIRED` when:
+- Scope is understood and decomposable but the current plan design is invalidated (e.g., a dependency changed, a prior architecture decision was reversed, a referenced library is deprecated).
+- The plan artifact must capture: what was invalidated, the current scope, and a concrete recovery next step.
+
 Do NOT return `ABSTAIN` for scope ambiguity without first attempting clarification.
+
+**Artifact rule:** Both `ABSTAIN` and `REPLAN_REQUIRED` MUST produce a markdown plan file. The artifact must capture resolved scope, blockers or invalidated assumptions, missing evidence, and a recovery next step. A single recovery phase is sufficient — do not force a full multi-phase plan for terminal non-ready outcomes.
 
 ## Archive
 
@@ -181,8 +187,8 @@ Default: when in doubt, delegate research early — under-researched plans fail 
 ## Non-Negotiable Rules
 
 - No plan design or phase decomposition may begin until the Clarification Gate (Step 2) has been explicitly evaluated and either resolved via `vscode/askQuestions` or determined non-applicable.
-- Every plan response must create a markdown plan file. The plan file is the authoritative artifact.
+- Every plan response — including `ABSTAIN` and `REPLAN_REQUIRED` outcomes — must create a markdown plan file. The plan file is the authoritative artifact.
 - Do not emit the full plan JSON structure in the chat message. The chat response contains only the handoff summary and plan file path.
 - No proceeding with low confidence as if ready.
 - No fabrication of evidence.
-- If confidence is insufficient for stable decomposition: `ABSTAIN`.
+- If evidence is insufficient to decompose: `ABSTAIN`. If scope is understood but design is invalidated: `REPLAN_REQUIRED`. Both statuses require a markdown plan artifact.

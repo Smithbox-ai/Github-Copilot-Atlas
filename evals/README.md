@@ -79,6 +79,7 @@ Structural validation fixtures for the ControlFlow multi-agent system. These sce
 - `scenarios/planner-idea-interview-trigger.json` — Idea interview activation
 - `scenarios/planner-idea-interview-bypass.json` — Idea interview bypass
 - `scenarios/behavioral-plan-quality.json` — Plan quality behavioral checks
+- `scenarios/planner-terminal-status-artifacts.json` — ABSTAIN and REPLAN_REQUIRED artifact creation
 
 ## Running Validations
 
@@ -102,7 +103,7 @@ npm test
 | Pass | What it checks |
 |------|----------------|
 | **1 — Schema Validity** | All `schemas/*.schema.json` compile under `ajv` JSON Schema 2020-12. |
-| **2 — Scenario Integrity** | All `evals/scenarios/*.json` have the required identity fields and point to real agent files. Planner scenarios must assert `risk_review_present: true`. |
+| **2 — Scenario Integrity** | All `evals/scenarios/*.json` have the required identity fields and point to real agent files. Planner scenarios must assert `risk_review_present: true`. Planner terminal-status scenarios (`ABSTAIN` / `REPLAN_REQUIRED`) must assert `plan_file_created: true`. |
 | **3 — Reference Integrity** | All backtick schema/doc references inside `*.agent.md` resolve to existing files. |
 | **3b — Required Artifacts** | Shared repo-local dependencies like `.github/copilot-instructions.md`, `plans/project-context.md`, and governance docs exist. |
 | **3c — Tool Grant Consistency** | Every agent frontmatter `tools:` list matches the repository's canonical least-privilege tool set. |

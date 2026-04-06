@@ -1,0 +1,42 @@
+{
+  "id": "planner-terminal-status-artifacts",
+  "target_agent": "Planner",
+  "goal": "Planner emits a markdown plan artifact for ABSTAIN and REPLAN_REQUIRED terminal statuses, not only for READY_FOR_EXECUTION",
+  "inputs": [
+    {
+      "label": "abstain-inaccessible-evidence",
+      "description": "Required files are explicitly inaccessible and clarification did not resolve the missing evidence. Planner must return ABSTAIN with a markdown plan artifact capturing diagnostics.",
+      "input": {
+        "query": "Plan the migration of the legacy billing system database schema",
+        "context": "The billing database is on a restricted server not accessible in this context. After clarification attempts, the evidence required to decompose the plan remains unavailable. Required schema files cannot be read."
+      },
+      "expected": {
+        "risk_review_present": true,
+        "required_status": "ABSTAIN",
+        "plan_file_created": true,
+        "abstain_reasons_min": 1,
+        "must_include_blockers": true
+      }
+    },
+    {
+      "label": "replan-required-invalidated-decomposition",
+      "description": "Scope is understood but the existing phase decomposition is invalidated by a dependency change. Planner must return REPLAN_REQUIRED with a markdown plan artifact capturing what changed and a recovery path.",
+      "input": {
+        "query": "Replan the authentication refactor — the JWT library previously planned is deprecated and unsupported. Scope is clear but the prior phase decomposition is invalid.",
+        "context": "The task scope (auth refactor) is fully understood. The original plan referenced jwt-legacy which is now deprecated. A new decomposition is needed but requires evidence about the replacement library before phases can be defined."
+      },
+      "expected": {
+        "risk_review_present": true,
+        "required_status": "REPLAN_REQUIRED",
+        "plan_file_created": true,
+        "must_include_recovery_next_step": true
+      }
+    }
+  ],
+  "assertions": [
+    "ABSTAIN output includes a markdown plan artifact with at minimum a blockers section and abstain reasons",
+    "REPLAN_REQUIRED output includes a markdown plan artifact capturing what was invalidated and a recovery next step",
+    "Both terminal statuses produce a plan file — plan_file_created is true for all non-READY_FOR_EXECUTION outcomes",
+    "Planner does not reply in chat only without creating a plan artifact even when status is not READY_FOR_EXECUTION"
+  ]
+}

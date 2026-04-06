@@ -4,7 +4,10 @@
  * Six passes:
  *   1. Schema Validity      — all schemas/*.schema.json compile without errors
  *   2. Scenario Integrity   — all evals/scenarios/*.json have required fields and
- *                             point to an existing agent.md
+ *                             point to an existing agent.md. Planner scenarios must
+ *                             assert `risk_review_present: true`. Planner terminal-status
+ *                             scenarios (ABSTAIN / REPLAN_REQUIRED) must assert
+ *                             `plan_file_created: true`.
  *   3. Reference Integrity  — all *.agent.md schema/doc references resolve to
  *                             existing files; required project artifacts exist
  *   3b. Required Artifacts  — shared project context files exist (includes governance/tool-grants.json)
@@ -204,6 +207,23 @@ for (const file of scenarioFiles) {
     if (!topLevelAsserts && !inputLevelAsserts) {
       fail(`${file}: Planner scenario missing risk_review_present assertion (add to expected or each input.expected)`);
       continue;
+    }
+  }
+
+  // Check Planner terminal-status scenarios assert plan_file_created: true
+  if (targetAgent === 'Planner') {
+    const terminalChecks = [];
+    if (scenario.expected) terminalChecks.push({ exp: scenario.expected, label: '' });
+    if (Array.isArray(scenario.inputs)) {
+      for (const inp of scenario.inputs) {
+        if (inp.expected) terminalChecks.push({ exp: inp.expected, label: inp.label ? `input "${inp.label}" — ` : '' });
+      }
+    }
+    for (const { exp, label } of terminalChecks) {
+      const isTerminal = exp.required_status === 'ABSTAIN' || exp.required_status === 'REPLAN_REQUIRED';
+      if (isTerminal && exp.plan_file_created !== true) {
+        fail(`${file}: ${label}terminal Planner status "${exp.required_status}" must assert plan_file_created: true`);
+      }
     }
   }
 
