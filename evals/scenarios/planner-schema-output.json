@@ -10,12 +10,20 @@
     "schema": "schemas/planner.plan.schema.json",
     "plan_file_created": true,
     "executor_agent_required_in_all_phases": true,
+    "semantic_risk_taxonomy_canonical_source": "plans/project-context.md",
+    "artifact_first_handoff": true,
     "phase_required_fields": [
       "executor_agent"
     ],
     "handoff_message_present": true,
+    "must_not_inline_plan_in_chat": true,
+    "must_not_emit_todo_output": true,
     "risk_review_present": true,
     "risk_review_covers_all_categories": true,
     "must_not": "raw JSON output to chat"
-  }
+  },
+  "assertions": [
+    "Planner keeps semantic-risk trigger heuristics anchored to plans/project-context.md rather than duplicating the taxonomy inline.",
+    "Planner handoff stays artifact-first: the saved plan file is authoritative and chat remains a concise summary for Orchestrator."
+  ]
 }

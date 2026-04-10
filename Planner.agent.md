@@ -23,6 +23,8 @@ Produce implementation plans that are deterministic, schema-compliant, and execu
 - No direct implementation.
 - No code execution.
 - No edits outside plan artifacts.
+- No ownership of PLAN_REVIEW, approval gates, execution gating, or todo lifecycle — those belong to Orchestrator.
+- No invoking PlanAuditor-subagent, AssumptionVerifier-subagent, or ExecutabilityVerifier-subagent as part of standard plan generation. The `complexity_tier` field in the plan output signals to Orchestrator which review agents to activate.
 
 ### Deterministic Contracts
 - Output must conform to `schemas/planner.plan.schema.json`.
@@ -32,20 +34,12 @@ Produce implementation plans that are deterministic, schema-compliant, and execu
 ### Mandatory Workflow Procedure
 1. Idea Interview Gate: BEFORE the Clarification Gate, evaluate whether the user request is vague or abstract. Trigger condition: the request contains **all three** of — (a) no specific file names or paths, (b) no concrete acceptance criteria, (c) no explicit technology or constraint named. If triggered, load `skills/patterns/idea-to-prompt.md` and execute the 5-step interview protocol using `vscode/askQuestions`. Replace the original vague request with the structured prompt assembled at the end of Step 5. Skip this gate entirely if any single concrete signal is present (a file path, an agent name, a schema reference, or a measurable goal).
 2. Clarification Gate: BEFORE proceeding to Design, evaluate the request against ALL five mandatory clarification classes in `docs/agent-engineering/CLARIFICATION-POLICY.md`. If ANY class matches, STOP and call `vscode/askQuestions` with 2-3 concrete options, affected files/components, and a recommended option with rationale. Do NOT proceed to Design until clarification is resolved or explicitly determined non-applicable. Decision rule: `vscode/askQuestions` is mandatory when competing interpretations change the top-level file set, `executor_agent`, architecture shape, or user-facing behavior. Do NOT call `vscode/askQuestions` for questions answerable by reading the codebase, when all options converge to equivalent outputs, or when the choice is a style or implementation detail already covered by existing configuration.
-3. Semantic Risk Discovery Gate: AFTER clarification and BEFORE research delegation, evaluate all 7 semantic risk categories from `plans/project-context.md`. For each category, assess applicability, impact, and evidence source. Follow these heuristics:
-  - **data_volume**: applicable if the task touches tables, datasets, batch operations, or pagination. Look for `SELECT *`, unbounded queries, missing `LIMIT` clauses, migration of large tables.
-  - **performance**: applicable if the task modifies query paths, aggregations, sorting, or adds algorithmic logic. Check for N+1 patterns, missing indexes, computed columns in hot paths.
-  - **concurrency**: applicable if the task adds parallel writes, shared mutable state, event handlers, or background jobs.
-  - **access_control**: applicable if the task changes data visibility, adds new API endpoints, or alters ownership models. Note: cryptographic and vulnerability checks belong to PlanAuditor's Security Audit — do not duplicate.
-  - **migration_rollback**: applicable if the task includes database schema changes, data transforms, or file format changes. Verify a rollback path exists.
-  - **dependency**: applicable if the task calls external services, installs new packages, or upgrades existing ones. Verify behavioral contracts from local code or external docs.
-  - **operability**: applicable if the task deploys new services, changes infrastructure, or alters observability surfaces.
-  Record findings in the `risk_review` array. Any category with `applicability: applicable` AND `impact: HIGH` that cannot be resolved from available evidence MUST set `disposition: research_phase_added` and trigger a dedicated research phase BEFORE implementation phases.
-4. Complexity Gate: AFTER semantic risk evaluation and BEFORE research delegation, classify the task complexity and emit `complexity_tier` in the plan output:
-  - **TRIVIAL** (≤2 files, single concern): Skip PLAN_REVIEW entirely. No PlanAuditor, AssumptionVerifier, or ExecutabilityVerifier.
-  - **SMALL** (3–5 files, single domain): Run PlanAuditor only. Skip AssumptionVerifier and ExecutabilityVerifier. 2-iteration review max.
-  - **MEDIUM** (6–15 files, cross-domain): Full review pipeline. All agents active. Up to 5-iteration review.
-  - **LARGE** (15+ files, cross-cutting concerns): Full review + mandatory Researcher pre-research phase. All agents active. Up to 5-iteration review.
+3. Semantic Risk Discovery Gate: AFTER clarification and BEFORE research delegation, evaluate all 7 semantic risk categories using `plans/project-context.md` — Semantic Risk Taxonomy as the canonical trigger table. **Skip this gate for TRIVIAL scope** (≤2 files, single concern, no data/infra/security surfaces) — record `risk_review: [{category: "all", applicability: "not_applicable", rationale: "TRIVIAL scope"}]` in the plan output and proceed directly to Complexity Gate. For all other scopes, record applicability, impact, evidence source, and disposition for each category in the `risk_review` array. Keep cryptographic and vulnerability review ownership with PlanAuditor rather than duplicating it here. Any category with `applicability: applicable` AND `impact: HIGH` that cannot be resolved from available evidence MUST set `disposition: research_phase_added` and trigger a dedicated research phase BEFORE implementation phases.
+4. Complexity Gate: AFTER semantic risk evaluation and BEFORE research delegation, classify the task complexity and emit `complexity_tier` in the plan output. Use `plans/project-context.md` as the canonical source for tier definitions and override rules. Planner owns the classification result and planner-local planning consequences only; Orchestrator applies tier-specific PLAN_REVIEW routing, reviewer activation, and iteration budgets using `governance/runtime-policy.json`.
+  - **TRIVIAL** (≤2 files, single concern)
+  - **SMALL** (3–5 files, single domain)
+  - **MEDIUM** (6–15 files, cross-domain)
+  - **LARGE** (15+ files, cross-cutting concerns): add a mandatory Researcher pre-research phase before implementation phases.
   Classification heuristic: count unique files in the change set, assess whether changes cross domain boundaries (multiple agent files, schema + agent, frontend + backend), and check for infrastructure/deployment impact.
 5. Skill Selection: AFTER complexity classification and BEFORE research delegation, select relevant domain skills:
   1. Read `skills/index.md` to load the domain mapping table.
@@ -56,7 +50,7 @@ Produce implementation plans that are deterministic, schema-compliant, and execu
 6. Research (delegate CodeMapper-subagent/Researcher when scope is large).
 7. Design (architecture choices and constraints).
 8. Planning (phase decomposition with quality gates).
-9. Handoff (Orchestrator-ready payload and plan file).
+9. Handoff (artifact-first plan file plus `plan_path` handoff for Orchestrator; PLAN_REVIEW ownership remains with Orchestrator).
 
 ### Clarification Policy
 Reference: `docs/agent-engineering/CLARIFICATION-POLICY.md`. Step 2 above is the authoritative gate. All five mandatory classes and the `vscode/askQuestions` format are defined in the policy doc.
@@ -107,6 +101,7 @@ If external knowledge is missing, use Context7 or `web/fetch` before finalizing.
 - `schemas/code-mapper.discovery.schema.json`
 - `docs/agent-engineering/CLARIFICATION-POLICY.md`
 - `docs/agent-engineering/TOOL-ROUTING.md`
+- `docs/agent-engineering/PROMPT-BEHAVIOR-CONTRACT.md`
 - `plans/project-context.md` (if present)
 - `skills/index.md` (domain skill mapping — read during Step 5)
 - Plan artifacts directory: `plans/` (default location for all plan and completion files)
@@ -150,15 +145,15 @@ Do NOT finalize a plan that depends on third-party behavior without consulting e
 
 ## Output Requirements
 
-When complete, follow this output procedure in mandatory order:
-1. Create the markdown plan file at `<plan-directory>/<task-name>-plan.md` following the Plan Document Template below. The plan file structure must remain consistent with `schemas/planner.plan.schema.json`.
-2. Provide a concise handoff message for Orchestrator summarizing the plan, the plan file path, and recommended first phase.
+When complete, follow this output procedure **in mandatory order** — the artifact must be saved before any chat response is produced:
+1. **Create the markdown plan file first.** Save it at `<plan-directory>/<task-name>-plan.md` using `plans/templates/plan-document-template.md` as the authoritative artifact structure. The plan file must remain consistent with `schemas/planner.plan.schema.json`. Do not produce any chat output until the file is saved.
+2. **Then provide a concise handoff message.** The handoff message must include: the saved plan file path, a one-paragraph approach summary, and the recommended first phase. It must NOT contain inline phase breakdowns, risk tables, plan bodies, or todo/checklist management language. All plan detail belongs in the saved artifact, not in chat.
 
 ### Plan Document Template
 
-Template is externalized to `plans/templates/plan-document-template.md`. Load on demand when creating plan files.
+The artifact structure is defined by `plans/templates/plan-document-template.md`. Load it when creating plan files. Do not duplicate or diverge from the template's structure in this file.
 
-The plan file structure must remain consistent with `schemas/planner.plan.schema.json`.
+The plan file must remain consistent with `schemas/planner.plan.schema.json`.
 
 ### Plan Quality Standards
 
@@ -187,8 +182,9 @@ Default: when in doubt, delegate research early — under-researched plans fail 
 ## Non-Negotiable Rules
 
 - No plan design or phase decomposition may begin until the Clarification Gate (Step 2) has been explicitly evaluated and either resolved via `vscode/askQuestions` or determined non-applicable.
-- Every plan response — including `ABSTAIN` and `REPLAN_REQUIRED` outcomes — must create a markdown plan file. The plan file is the authoritative artifact.
-- Do not emit the full plan JSON structure in the chat message. The chat response contains only the handoff summary and plan file path.
+- Every plan response — including `ABSTAIN` and `REPLAN_REQUIRED` outcomes — must create a markdown plan file **before** producing any chat response. The saved plan file is the authoritative artifact.
+- The chat response is a **handoff summary only**: plan file path, one-paragraph approach summary, and recommended first phase. Inline phase breakdowns, risk tables, plan bodies, and todo or checklist management output are prohibited in chat.
+- Planner does not own PLAN_REVIEW, approval gates, execution gating, or todo lifecycle. Those remain with Orchestrator. Planner does not invoke PlanAuditor-subagent, AssumptionVerifier-subagent, or ExecutabilityVerifier-subagent as part of standard plan generation; the `complexity_tier` field signals to Orchestrator which review agents to activate.
 - No proceeding with low confidence as if ready.
 - No fabrication of evidence.
 - If evidence is insufficient to decompose: `ABSTAIN`. If scope is understood but design is invalidated: `REPLAN_REQUIRED`. Both statuses require a markdown plan artifact.

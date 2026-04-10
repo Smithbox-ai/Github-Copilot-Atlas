@@ -10,6 +10,8 @@
     "risk_review_present": true,
     "complexity_tier_present": true,
     "phases_have_executor_agent": true,
+    "phases_have_acceptance_criteria": true,
+    "phases_have_quality_gates": true,
     "data_volume_must_be": "applicable"
   }
 }

@@ -29,9 +29,8 @@ Agent engineering policies are in `docs/agent-engineering/`:
 - `CLARIFICATION-POLICY.md` — When to invoke `vscode/askQuestions` vs. return `NEEDS_INPUT`.
 - `TOOL-ROUTING.md` — Routing rules for external tools (fetch, githubRepo, MCP).
 - `SCORING-SPEC.md` — Quantitative scoring reference.
-- `COMPLIANCE-GAPS.md` — Known spec compliance gaps and in-progress remediations.
-- `GOVERNANCE-WEIGHT-AUDIT.md` — Governance weight audit results for each agent.
-- `MIGRATION-CORE-FIRST.md` — Guide for migrating agents to current core-first patterns.
+- `MIGRATION-CORE-FIRST.md` — Shared implementation backbone pattern and consolidation exit criteria.
+- `PROMPT-BEHAVIOR-CONTRACT.md` — Behavioral invariants complementing P.A.R.T structural rules.
 
 ## Conventions
 - Agent files live at repo root: `<Name>.agent.md` or `<Name>-subagent.agent.md`.
@@ -62,3 +61,5 @@ Complexity tiers: TRIVIAL / SMALL / MEDIUM / LARGE — see `plans/project-contex
 | Detailed task with clear requirements | `@Orchestrator` — dispatches subagents, manages gates |
 | Deep research question | `@Researcher` — evidence-based investigation |
 | Quick codebase exploration | `@CodeMapper` — read-only discovery |
+
+> After `@Planner` produces a plan artifact, reviewed execution (PLAN_REVIEW, approvals, todo lifecycle, execution gating) continues through `@Orchestrator`. Planner authors plans; Orchestrator governs their review and execution.

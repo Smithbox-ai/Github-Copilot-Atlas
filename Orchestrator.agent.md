@@ -30,15 +30,8 @@ Run deterministic orchestration for: `Research -> Design -> Planning -> Implemen
 
 ### State Machine
 - `PLANNING` -> `WAITING_APPROVAL` -> `PLAN_REVIEW` -> `ACTING` -> `REVIEWING` -> `WAITING_APPROVAL` -> (`ACTING` next phase OR `COMPLETE`).
-- `PLAN_REVIEW` is the adversarial audit gate with up to 5 iteration cycles:
-  1. Dispatch AssumptionVerifier-subagent AND PlanAuditor-subagent in parallel with `plan_path` and `iteration_index`.
-  2. Wait for BOTH to return.
-  3. If PlanAuditor `APPROVED` AND AssumptionVerifier has zero BLOCKING mirages → dispatch ExecutabilityVerifier-subagent.
-  4. If ExecutabilityVerifier `PASS` → plan APPROVED, exit loop → transition to `ACTING`.
-  5. If ExecutabilityVerifier `FAIL`/`WARN` → route ExecutabilityVerifier findings to Planner, increment `iteration_index`, continue loop.
-  6. If PlanAuditor `NEEDS_REVISION` or AssumptionVerifier has BLOCKING mirages → route combined findings to Planner, increment `iteration_index`, continue loop.
-  7. Convergence check: if score improvement < 5% for 2 consecutive iterations → stagnation detected, present to user with findings summary.
-  8. If `iteration_index` exceeds `max_iterations` (5) → present best iteration's plan and remaining issues to user.
+- `PLAN_REVIEW` is the adversarial audit gate. `governance/runtime-policy.json` is the authoritative source for trigger thresholds, tier routing, `max_iterations`, and retry budgets; Execution Protocol §4 is authoritative for the detailed PLAN_REVIEW flow and delegation order.
+- `PLAN_REVIEW` exits to `ACTING` on approval, loops back through Planner on `NEEDS_REVISION` or blocking mirages, and transitions to `WAITING_APPROVAL` on `REJECTED`, stagnation, max-iteration exhaustion, or other approval-gated risk.
 - If PlanAuditor returns `REJECTED`: transition to `WAITING_APPROVAL` with findings for user decision.
 - If PlanAuditor or AssumptionVerifier returns `ABSTAIN`: log and proceed (do not block on audit uncertainty).
 - Any high-risk action transitions to `WAITING_APPROVAL` via `HIGH_RISK_APPROVAL_GATE`.
@@ -117,6 +110,7 @@ Maintain awareness of current orchestration state at all times:
 - `docs/agent-engineering/CLARIFICATION-POLICY.md`
 - `docs/agent-engineering/TOOL-ROUTING.md`
 - `docs/agent-engineering/SCORING-SPEC.md`
+- `docs/agent-engineering/PROMPT-BEHAVIOR-CONTRACT.md`
 - `plans/project-context.md` (if present)
 - `schemas/assumption-verifier.plan-audit.schema.json`
 - `schemas/executability-verifier.execution-report.schema.json`
@@ -160,22 +154,29 @@ Reference: `docs/agent-engineering/TOOL-ROUTING.md`
 3. **Planning Gate**
    - Require structured plan from planner contract.
    - Pause for user approval.
+   - A plan artifact received via `plan_path` from Planner is a reviewable input, not an implicit approval. It enters the same PLAN_REVIEW trigger evaluation as any other plan artifact. Trigger conditions in the Plan Review Gate below are authoritative; the presence of a `plan_path` handoff does not bypass them.
 
 4. **Plan Review Gate (Conditional)**
-   - Trigger conditions: plan has ≥ `min_phases` phases (default: 3, see `governance/runtime-policy.json` `plan_review_gate_trigger_conditions.min_phases`), OR plan confidence < `confidence_threshold` (default: 0.9), OR scope includes destructive/high-risk operations, OR any `risk_review` entry has `applicability: applicable` AND `impact: HIGH` AND `disposition` not `resolved`.
-   - **Complexity-Aware Routing** _(Authoritative source for tier routing. `governance/runtime-policy.json` `review_pipeline_by_tier` and `max_iterations_by_tier` must match these settings.)_**:** Read `complexity_tier` from Planner plan output and adjust pipeline depth:
+   - Trigger conditions: `governance/runtime-policy.json` `plan_review_gate_trigger_conditions` is the authoritative source. Trigger PLAN_REVIEW when any configured condition is met: phase count reaches `min_phases`, confidence falls below `confidence_threshold`, scope includes destructive/high-risk operations, or an applicable `risk_review` entry is HIGH and not `resolved`.
+   - **Complexity-Aware Routing** _(Authoritative source: `governance/runtime-policy.json` `review_pipeline_by_tier` and `max_iterations_by_tier`.)_**:** Read `complexity_tier` from Planner plan output and dispatch the configured review agents:
      - **TRIVIAL**: Skip PLAN_REVIEW entirely — no PlanAuditor, AssumptionVerifier, or ExecutabilityVerifier. Proceed to Implementation Loop.
-     - **SMALL**: Run PlanAuditor only (skip AssumptionVerifier and ExecutabilityVerifier). Max 2 iterations.
-     - **MEDIUM**: Run PlanAuditor + AssumptionVerifier in parallel (skip ExecutabilityVerifier). Max 5 iterations.
-     - **LARGE**: Full pipeline — PlanAuditor + AssumptionVerifier + ExecutabilityVerifier. Max 5 iterations.
+     - **SMALL**: Run PlanAuditor only (skip AssumptionVerifier and ExecutabilityVerifier).
+     - **MEDIUM**: Run PlanAuditor + AssumptionVerifier in parallel (skip ExecutabilityVerifier).
+     - **LARGE**: Full pipeline — PlanAuditor + AssumptionVerifier + ExecutabilityVerifier.
+     - Use `max_iterations_by_tier` from `governance/runtime-policy.json` for the iteration cap.
      - **Override**: Any plan with `risk_review` HIGH-impact applicable entry → force full pipeline regardless of tier.
    - When triggered by a semantic `risk_review` entry, derive `focus_areas` for delegation using the mapping from `plans/project-context.md` — Semantic Risk Taxonomy.
+   - **Revision-Loop Invalidation (Closed World):**
+     - Default to the full rerun path for the current tier when a revision touches `Planner.agent.md`, `Orchestrator.agent.md`, `governance/runtime-policy.json`, orchestration handoff tests/scenarios, review routing, verification commands, policy surfaces, phase structure, task or file paths, contracts, `risk_review`, `complexity_tier`, executability-bearing steps, or when the classification is ambiguous.
+     - Selective rerun is allowed only for reviewer-local summary wording or evidence-citation text only, with no changes to plan artifacts, prompts, policy surfaces, tests, routing, commands, phase structure, task or file paths, contracts, `risk_review`, or `complexity_tier`.
+     - Closed-world rule: if a revision does not match the narrow selective exception exactly, fall back to the full rerun path for the current tier.
+     - Selective rerun changes loop work only; it never changes trigger conditions, tier routing, or override semantics, and it never bypasses ExecutabilityVerifier when the current tier or risk override keeps it in scope.
    - **Iterative Review Loop (up to max_iterations):**
      1. Generate `trace_id` (UUID v4) at loop start if not already set. Include in all gate events and delegation payloads.
      2. Dispatch agents per complexity tier (see above). Pass `plan_path`, `iteration_index`, and `trace_id`.
      3. Wait for all dispatched agents to return.
      4. If PlanAuditor `APPROVED` AND (AssumptionVerifier not dispatched OR zero BLOCKING mirages):
-        - If ExecutabilityVerifier is in scope (LARGE tier): dispatch ExecutabilityVerifier-subagent with `plan_path`.
+        - If ExecutabilityVerifier is in scope for the current tier or HIGH-risk override: dispatch ExecutabilityVerifier-subagent with `plan_path`.
         - If ExecutabilityVerifier `PASS` or not in scope → plan APPROVED, exit loop.
         - If ExecutabilityVerifier `FAIL`/`WARN` → route findings to Planner, increment `iteration_index`.
      5. If PlanAuditor `NEEDS_REVISION` or AssumptionVerifier has BLOCKING mirages → route combined findings to Planner, increment `iteration_index`.

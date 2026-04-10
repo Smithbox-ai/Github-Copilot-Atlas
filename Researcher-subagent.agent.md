@@ -54,6 +54,7 @@ If evidence is insufficient for reliable conclusions, return `ABSTAIN` with reas
 
 - `schemas/researcher.research-findings.schema.json`
 - `schemas/code-mapper.discovery.schema.json`
+- `docs/agent-engineering/PROMPT-BEHAVIOR-CONTRACT.md`
 - `plans/project-context.md` (if present)
 
 ## Tools
@@ -91,7 +92,7 @@ If still < 3 after the extra cycle, report findings with explicit `uncertainties
 
 ## Output Requirements
 
-Return a structured text report. Do NOT output raw JSON to chat.
+Return a structured text report. Shared output hygiene stays governed by `docs/agent-engineering/PROMPT-BEHAVIOR-CONTRACT.md`; keep only the schema-specific report fields below.
 
 Include these fields clearly labeled:
 - **Status** — COMPLETE, ABSTAIN, or INSUFFICIENT_EVIDENCE.

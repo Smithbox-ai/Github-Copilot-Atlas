@@ -36,7 +36,10 @@
       },
       "expected_behavior": {
         "plan_auditor_invoked": true,
-        "trigger_reason": "confidence < 0.9"
+        "trigger_reason": "confidence < 0.9",
+        "delegation_includes": [
+          "plan_path"
+        ]
       }
     },
     {
@@ -66,7 +69,10 @@
       },
       "expected_behavior": {
         "plan_auditor_invoked": true,
-        "trigger_reason": "destructive_scope"
+        "trigger_reason": "destructive_scope",
+        "delegation_includes": [
+          "plan_path"
+        ]
       }
     },
     {
@@ -170,10 +176,14 @@
     "PlanAuditor is invoked for plans with destructive operations",
     "PlanAuditor is NOT invoked for simple plans (< 3 phases, high confidence, non-destructive, no unresolved HIGH-impact risk_review entries)",
     "Orchestrator passes plan_path (not inline plan) to PlanAuditor",
+    "governance/runtime-policy.json remains the authoritative source for PLAN_REVIEW trigger thresholds and tier-specific iteration caps",
     "REJECTED status transitions to WAITING_APPROVAL",
     "NEEDS_REVISION routes back to Planner (max iterations per complexity tier: SMALL=2, MEDIUM/LARGE=5)",
     "ABSTAIN from PlanAuditor does not block pipeline",
     "PlanAuditor is invoked for plans with any risk_review entry applicability=applicable AND impact=HIGH AND disposition != resolved",
-    "When triggered by semantic risk, Orchestrator derives focus_areas from risk category mapping and includes them in delegation"
+    "When triggered by semantic risk, Orchestrator derives focus_areas from risk category mapping and includes them in delegation",
+    "PLAN_REVIEW reruns default to full rerun for sensitive or ambiguous changes, including prompts, policy surfaces, routing, commands, contracts, and orchestration handoff tests/scenarios",
+    "Selective rerun is allowed only for reviewer-local summary wording or evidence-citation text with no plan/prompt/policy/test/routing/command changes",
+    "Selective rerun never bypasses ExecutabilityVerifier when current tier or risk override keeps it in scope"
   ]
 }

@@ -1,0 +1,171 @@
+id: cf-internal-optimization-2026-04-09
+title: ControlFlow Internal Optimization Iterations 1-3
+status: approved_for_execution
+type: internal_optimization
+updated: 2026-04-09
+summary: >-
+  Non-breaking efficiency optimization of the existing ControlFlow agent system.
+  Preserve the 13-agent architecture, schemas, contracts, and governance
+  foundations while reducing orchestration latency, prompt/context overhead, and
+  repeated local eval overhead.
+
+problem:
+  current_state:
+    - Shared prompt and governance guidance is split between canonical docs and repeated agent-local prose, increasing prompt weight and drift risk.
+    - Planner-to-Orchestrator handoff and plan review instructions carry avoidable context and review-loop overhead even when coverage requirements do not change.
+    - evals/validate.mjs always performs full structural passes, making repeated local validation slower than necessary.
+  desired_state:
+    - Shared rules live in clear canonical sources.
+    - Review loops stay safe but avoid redundant prompt/context work.
+    - Repeat local eval runs reuse safe cached results when inputs are unchanged.
+
+goals:
+  - Reduce prompt/context overhead without weakening required gates, tool-routing rules, or ownership boundaries.
+  - Reduce safe orchestration and review latency without reducing current executability coverage.
+  - Reduce repeat local eval time with conservative caching in evals/validate.mjs.
+
+user_stories:
+  - as: repository maintainer
+    i_want: shared prompt guidance to have a single clear source of truth
+    so_that: agent files are smaller and prompt drift is easier to control
+  - as: orchestrator user
+    i_want: plan review to spend less time on redundant handoff and loop overhead
+    so_that: safe execution starts sooner without skipping required review agents
+  - as: contributor running evals
+    i_want: repeat validation runs to avoid recomputing unchanged structural work
+    so_that: local iteration time stays low while offline verification remains trustworthy
+
+scope:
+  in_scope:
+    - Source-of-truth cleanup for repeated prompt and governance rules.
+    - Prompt dedup and drift reduction across Planner, Orchestrator, and subagent prompt surfaces.
+    - Safe review-loop latency reduction that preserves current tier routing and executability verification coverage.
+    - Low-risk repeat-run caching for evals/validate.mjs.
+    - Supporting doc and eval updates required to prove non-regression.
+  out_of_scope:
+    - Agent consolidation or changes to the 13-agent roster.
+    - Schema rewrites, contract shape changes, or status-enum redesign.
+    - Complexity-tier boundary changes in plans/project-context.md.
+    - Review-pipeline depth reductions in governance/runtime-policy.json.
+    - Architecture redesign, new product features, or workflow replacement.
+    - Discovery-agent fast path in this effort.
+
+decisions:
+  - id: D1
+    statement: Preserve the current 13-agent architecture and role split.
+    rationale: Role boundaries are already encoded across prompt files, schemas, tool grants, and evals.
+  - id: D2
+    statement: Treat this as an optimization pass, not a redesign project.
+    rationale: The approved scope is non-breaking efficiency work only.
+  - id: D3
+    statement: Preserve review coverage, including executability verification wherever the current pipeline already requires it.
+    rationale: Latency reduction must not come from weakening safety or cold-start executability checks.
+  - id: D4
+    statement: Defer discovery-agent fast path until iterations 1-3 ship and are measured.
+    rationale: It widens the change surface and is explicitly outside the approved scope.
+
+iterations:
+  - id: iteration_1
+    title: Source-of-truth cleanup and prompt dedup/drift reduction
+    goal: Reduce prompt weight and drift by consolidating repeated guidance into canonical files and trimming safe duplication.
+    waves:
+      - id: wave_1
+        title: Canonical source cleanup
+        focus:
+          - Confirm the single canonical home for repeated prompt and governance rules and ownership boundaries.
+          - Remove, archive, or relabel stale guidance that no longer matches the current system.
+        target_files:
+          - .github/copilot-instructions.md
+          - plans/project-context.md
+          - docs/agent-engineering/
+          - docs/archive/
+          - governance/rename-allowlist.json
+        done_when:
+          - Each repeated rule targeted in this wave has one explicit canonical source.
+          - No active documentation path points at stale optimization guidance.
+      - id: wave_2
+        title: Agent prompt dedup
+        focus:
+          - Replace repeated agent-local prose with references to canonical docs where safe.
+          - Keep required PART sections, local role constraints, and tool-routing or clarification requirements intact.
+        target_files:
+          - Planner.agent.md
+          - Orchestrator.agent.md
+          - "*-subagent.agent.md"
+          - evals/scenarios/
+          - evals/tests/
+        done_when:
+          - Prompt reductions do not remove required contract references or role-specific constraints.
+          - Shared-policy alignment is verifiable through existing offline evals.
+    verification:
+      - cd evals && npm test
+
+  - id: iteration_2
+    title: Safe review-loop latency reduction
+    goal: Reduce avoidable orchestration latency inside the existing review pipeline without changing review depth or tier semantics.
+    focus:
+      - Remove redundant handoff and review restatement between Planner and Orchestrator.
+      - Tighten revision-loop instructions so a review cycle reruns only the steps required by the current pipeline.
+      - Keep current tier routing, trigger conditions, and LARGE-tier executability verification behavior intact.
+    target_files:
+      - Planner.agent.md
+      - Orchestrator.agent.md
+      - evals/scenarios/
+      - evals/tests/
+      - docs/agent-engineering/PROMPT-BEHAVIOR-CONTRACT.md
+    done_when:
+      - Planner handoff remains artifact-first and Orchestrator-owned for PLAN_REVIEW, approvals, and execution gating.
+      - LARGE-tier plans still route through PlanAuditor, AssumptionVerifier, and ExecutabilityVerifier when currently required.
+      - SMALL and MEDIUM behavior remains aligned with governance/runtime-policy.json.
+    verification:
+      - cd evals && npm test
+
+  - id: iteration_3
+    title: Low-risk eval caching in validate.mjs
+    goal: Speed up repeated local structural validation runs while preserving cold-run correctness and failure visibility.
+    focus:
+      - Add repeat-run caching for unchanged structural inputs in evals/validate.mjs.
+      - Invalidate cache entries when relevant agent, schema, governance, skill, scenario, or harness files change.
+      - Never reuse failed results; cold runs remain authoritative.
+    target_files:
+      - evals/validate.mjs
+      - evals/README.md
+      - .gitignore
+    cache_artifact:
+      path: evals/.cache/validate-cache.json
+      checked_in: false
+    done_when:
+      - First runs still perform full structural validation.
+      - Repeat runs with unchanged inputs can reuse cache safely and show measurable local speedup.
+      - Relevant file changes invalidate affected cache entries automatically.
+    verification:
+      - cd evals && npm test
+    deferred:
+      - Discovery-agent fast path
+
+acceptance_criteria:
+  - id: AC1
+    requirement: The optimization preserves the current 13-agent architecture, schemas, contracts, and governance foundations.
+    verification: No agent removals or merges, no schema rewrites, and cd evals && npm test passes after each iteration.
+  - id: AC2
+    requirement: Iteration 1 reduces prompt/context duplication and drift without removing required role-specific behavior.
+    verification: Canonical sources are explicit, agent prompts retain required constraints, and offline evals remain green.
+  - id: AC3
+    requirement: Iteration 2 reduces safe review-loop latency without reducing current executability coverage.
+    verification: Review-routing scenarios continue to reflect current tier semantics, especially LARGE-tier executability verification.
+  - id: AC4
+    requirement: Iteration 3 introduces conservative repeat-run caching only for unchanged structural inputs.
+    verification: Warm reruns are faster on the same machine, cache misses occur on relevant file changes, and failed runs are not cached.
+  - id: AC5
+    requirement: The effort stays within the approved optimization scope.
+    verification: No discovery-agent fast path, tier-boundary changes, or architecture redesign work appears in the implementation scope.
+
+risks_and_mitigations:
+  - risk: Over-pruning prompt text could remove a load-bearing behavioral constraint.
+    mitigation: Dedup only when a canonical document already exists, and keep scenario plus behavioral eval coverage green after each wave.
+  - risk: Review-loop changes could accidentally weaken routing or approval semantics.
+    mitigation: Preserve governance/runtime-policy.json semantics and reinforce handoff or routing behavior through eval scenarios and tests.
+  - risk: Eval caching could hide stale failures if invalidation is incomplete.
+    mitigation: Use conservative invalidation, never cache failed results, and keep cold runs authoritative.
+
+clarifications: []

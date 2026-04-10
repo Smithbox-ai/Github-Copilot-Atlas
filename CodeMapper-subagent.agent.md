@@ -54,6 +54,7 @@ If results are contradictory or coverage is insufficient, return `ABSTAIN` with 
 ## Resources
 
 - `schemas/code-mapper.discovery.schema.json`
+- `docs/agent-engineering/PROMPT-BEHAVIOR-CONTRACT.md`
 - `plans/project-context.md` (if present)
 
 ## Tools
@@ -91,7 +92,7 @@ multi_tool_use.parallel:
 
 ## Output Requirements
 
-Return a structured text report. Do NOT output raw JSON to chat.
+Return a structured text report. Shared output hygiene stays governed by `docs/agent-engineering/PROMPT-BEHAVIOR-CONTRACT.md`; keep only the schema-specific report fields below.
 
 Include these fields clearly labeled:
 - **Status** — COMPLETE or ABSTAIN.
@@ -104,7 +105,6 @@ Full contract reference: `schemas/code-mapper.discovery.schema.json`.
 
 ## Non-Negotiable Rules
 
-- Read-only behavior is mandatory.
 - No speculative claims without references.
 - No fabrication of evidence.
 - If findings are insufficient: `ABSTAIN`.

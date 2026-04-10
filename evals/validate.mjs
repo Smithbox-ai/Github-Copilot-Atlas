@@ -33,7 +33,8 @@
 
 import Ajv2020 from 'ajv/dist/2020.js';
 import addFormats from 'ajv-formats';
-import { readFileSync, readdirSync, existsSync } from 'fs';
+import { createHash } from 'crypto';
+import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 'fs';
 import { join, resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -41,6 +42,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
 const SCHEMAS_DIR = join(ROOT, 'schemas');
 const SCENARIOS_DIR = join(__dirname, 'scenarios');
+const CACHE_DIR = join(__dirname, '.cache');
+const CACHE_FILE = join(CACHE_DIR, 'validate-cache.json');
 
 let totalPassed = 0;
 let totalFailed = 0;
@@ -125,6 +128,78 @@ function collectSchemaRefs(scenarioObj) {
     }
   }
   return refs;
+}
+
+// ─── Warm Cache (Structural Passes) ──────────────────────────────────────────
+
+function computeStructuralFingerprint() {
+  const h = createHash('sha256');
+  function hashFile(filePath) {
+    try {
+      h.update(filePath + '\x00');
+      h.update(readFileSync(filePath));
+    } catch {
+      h.update(filePath + '\x00<missing>');
+    }
+  }
+  // validate.mjs itself
+  hashFile(fileURLToPath(import.meta.url));
+  // evals package manifests
+  hashFile(join(__dirname, 'package.json'));
+  hashFile(join(__dirname, 'package-lock.json'));
+  // schemas
+  try {
+    for (const f of readdirSync(SCHEMAS_DIR).sort()) {
+      if (f.endsWith('.schema.json')) hashFile(join(SCHEMAS_DIR, f));
+    }
+  } catch { /* cold */ }
+  // scenarios
+  try {
+    for (const f of readdirSync(SCENARIOS_DIR).sort()) {
+      if (f.endsWith('.json')) hashFile(join(SCENARIOS_DIR, f));
+    }
+  } catch { /* cold */ }
+  // root agent prompt files
+  try {
+    for (const f of readdirSync(ROOT).sort()) {
+      if (f.endsWith('.agent.md')) hashFile(join(ROOT, f));
+    }
+  } catch { /* cold */ }
+  // required governance and artifact files consumed by the harness
+  for (const rel of [
+    '.github/copilot-instructions.md',
+    'plans/project-context.md',
+    'docs/agent-engineering/PART-SPEC.md',
+    'docs/agent-engineering/RELIABILITY-GATES.md',
+    'docs/agent-engineering/CLARIFICATION-POLICY.md',
+    'docs/agent-engineering/TOOL-ROUTING.md',
+    'governance/tool-grants.json',
+    'governance/runtime-policy.json',
+    'governance/rename-allowlist.json',
+  ]) hashFile(join(ROOT, rel));
+  // skills index and patterns
+  hashFile(join(ROOT, 'skills', 'index.md'));
+  try {
+    for (const f of readdirSync(join(ROOT, 'skills', 'patterns')).sort()) {
+      if (f.endsWith('.md')) hashFile(join(ROOT, 'skills', 'patterns', f));
+    }
+  } catch { /* cold */ }
+  return h.digest('hex');
+}
+
+const currentFingerprint = computeStructuralFingerprint();
+
+// Cache read — any failure is a cold run, never a harness error
+let cacheHit = false;
+try {
+  const cached = JSON.parse(readFileSync(CACHE_FILE, 'utf8'));
+  if (cached && cached.fingerprint === currentFingerprint) cacheHit = true;
+} catch { /* cache miss */ }
+
+if (cacheHit) {
+  console.log('\n[cache] Structural inputs unchanged — reusing successful cached result.\n');
+  console.log('All checks passed \u2705 (cached)\n');
+  process.exit(0);
 }
 
 // ─── Pass 1: Schema Validity ─────────────────────────────────────────────────
@@ -226,6 +301,77 @@ for (const file of scenarioFiles) {
       }
     }
   }
+
+  // ── Phase 1 remediation: targeted structural assertion enforcement ────────────
+  // Planner: planner-schema-output must assert handoff-only output, no inline/todo leakage, and ready-path artifact creation
+  if (targetAgent === 'Planner' && id === 'planner-schema-output') {
+    const exp = scenario.expected || {};
+    if (exp.plan_file_created !== true) {
+      fail(`${file}: planner-schema-output must assert plan_file_created: true`);
+    }
+    if (!exp.must_not_inline_plan_in_chat) {
+      fail(`${file}: planner-schema-output must assert must_not_inline_plan_in_chat: true`);
+    }
+    if (!exp.must_not_emit_todo_output) {
+      fail(`${file}: planner-schema-output must assert must_not_emit_todo_output: true`);
+    }
+    if (exp.handoff_message_present !== true) {
+      fail(`${file}: planner-schema-output must assert handoff_message_present: true`);
+    }
+  }
+
+  // Planner: scenarios asserting phases_have_executor_agent must also cover the schema-required per-phase fields
+  if (targetAgent === 'Planner') {
+    const exp = scenario.expected || {};
+    if (exp.phases_have_executor_agent === true) {
+      if (!exp.phases_have_acceptance_criteria) {
+        fail(`${file}: Planner scenario asserting phases_have_executor_agent must also assert phases_have_acceptance_criteria`);
+      }
+      if (!exp.phases_have_quality_gates) {
+        fail(`${file}: Planner scenario asserting phases_have_executor_agent must also assert phases_have_quality_gates`);
+      }
+    }
+  }
+
+  // Planner: planner-reviewed-flow-routing must assert all architecture-preserving handoff contract keys
+  if (targetAgent === 'Planner' && id === 'planner-reviewed-flow-routing') {
+    const exp = scenario.expected || {};
+    if (exp.plan_file_created !== true) {
+      fail(`${file}: planner-reviewed-flow-routing must assert plan_file_created: true`);
+    }
+    if (!exp.plan_path_produced) {
+      fail(`${file}: planner-reviewed-flow-routing must assert plan_path_produced: true`);
+    }
+    if (!exp.orchestrator_review_applies) {
+      fail(`${file}: planner-reviewed-flow-routing must assert orchestrator_review_applies: true`);
+    }
+    if (exp.planner_does_not_own_plan_review !== true) {
+      fail(`${file}: planner-reviewed-flow-routing must assert planner_does_not_own_plan_review: true`);
+    }
+    if (exp.handoff_message_present !== true) {
+      fail(`${file}: planner-reviewed-flow-routing must assert handoff_message_present: true`);
+    }
+    if (!exp.must_not_inline_plan_in_chat) {
+      fail(`${file}: planner-reviewed-flow-routing must assert must_not_inline_plan_in_chat: true`);
+    }
+  }
+
+  // Orchestrator plan-auditor-integration: for plan-trigger cases, delegation_includes must exist and contain plan_path
+  if (targetAgent === 'Orchestrator' && id === 'orchestrator-plan-auditor-integration') {
+    const integrationInputs = Array.isArray(scenario.inputs) ? scenario.inputs : [];
+    for (const inp of integrationInputs) {
+      const eb = inp.expected_behavior || {};
+      const isPlanTriggerCase = inp.input !== undefined && inp.input.plan !== undefined;
+      if (isPlanTriggerCase && eb.plan_auditor_invoked === true) {
+        if (!Array.isArray(eb.delegation_includes)) {
+          fail(`${file}: input "${inp.label}" triggers plan_auditor but delegation_includes is missing`);
+        } else if (!eb.delegation_includes.includes('plan_path')) {
+          fail(`${file}: input "${inp.label}" triggers plan_auditor but delegation_includes is missing "plan_path"`);
+        }
+      }
+    }
+  }
+  // ── End Phase 1 remediation checks ───────────────────────────────────────────
 
   const agentFile = join(ROOT, `${targetAgent}.agent.md`);
   if (!existsSync(agentFile)) {
@@ -546,5 +692,13 @@ if (totalFailed > 0) {
   console.error(`\n${totalFailed} check(s) failed.\n`);
   process.exit(1);
 } else {
+  try {
+    mkdirSync(CACHE_DIR, { recursive: true });
+    writeFileSync(
+      CACHE_FILE,
+      JSON.stringify({ fingerprint: currentFingerprint, timestamp: new Date().toISOString() }, null, 2) + '\n',
+      'utf8'
+    );
+  } catch { /* cache write failure is non-fatal */ }
   console.log('\nAll checks passed \u2705\n');
 }

@@ -47,53 +47,17 @@
     "plans/templates/verified-items-template.md",
     "NOTES.md",
     "docs/agent-engineering/CLARIFICATION-POLICY.md",
-    "docs/agent-engineering/COMPLIANCE-GAPS.md",
-    "docs/agent-engineering/GOVERNANCE-WEIGHT-AUDIT.md",
     "docs/agent-engineering/MIGRATION-CORE-FIRST.md",
     "docs/agent-engineering/PART-SPEC.md",
     "docs/agent-engineering/RELIABILITY-GATES.md",
     "docs/agent-engineering/SCORING-SPEC.md",
     "docs/agent-engineering/TOOL-ROUTING.md",
+    "docs/agent-engineering/PROMPT-BEHAVIOR-CONTRACT.md",
     "evals/package.json",
-    "evals/package-lock.json"
+    "evals/package-lock.json",
+    "evals/tests/prompt-behavior-contract.test.mjs",
+    "evals/tests/orchestration-handoff-contract.test.mjs"
   ],
-  "retired_names": {
-    "runtime": [
-      "Atlas",
-      "Prometheus",
-      "Challenger",
-      "Challenger-subagent",
-      "Skeptic",
-      "Skeptic-subagent",
-      "DryRun",
-      "DryRun-subagent",
-      "Sisyphus",
-      "Sisyphus-subagent",
-      "Frontend-Engineer",
-      "Frontend-Engineer-subagent",
-      "DevOps",
-      "DevOps-subagent",
-      "Code-Review",
-      "Code-Review-subagent",
-      "Oracle",
-      "Oracle-subagent",
-      "Scout",
-      "Scout-subagent",
-      "DocWriter",
-      "DocWriter-subagent"
-    ],
-    "draft": [
-      "Coordinator",
-      "ClaimVerifier",
-      "ExecutionSimulator",
-      "BrowserQA"
-    ],
-    "project_labels": [
-      "Atlas",
-      "atlas-evals",
-      "Github-Copilot-Atlas"
-    ]
-  },
   "schema_refs": {
     "schemas/orchestrator.gate-event.schema.json": "schemas/orchestrator.gate-event.schema.json",
     "schemas/orchestrator.delegation-protocol.schema.json": "schemas/orchestrator.delegation-protocol.schema.json",
@@ -113,8 +77,7 @@
   "shared_schemas": {
     "preserve": [
       "schemas/clarification-request.schema.json"
-    ],
-    "namespace_update": []
+    ]
   },
   "exceptions": [
     {
@@ -125,90 +88,10 @@
       ]
     },
     {
-      "path": "plans/atlas-evolution-plan.md",
-      "reason": "historical",
-      "allowed_names": [
-        "Atlas",
-        "Prometheus",
-        "Sisyphus",
-        "Oracle"
-      ]
-    },
-    {
-      "path": "plans/atlas-modernization-plan.md",
-      "reason": "historical",
-      "allowed_names": [
-        "Atlas",
-        "Prometheus",
-        "Sisyphus",
-        "Oracle"
-      ]
-    },
-    {
       "path": "BrowserTester-subagent.agent.md",
       "reason": "runtime stem preservation",
       "allowed_names": [
         "BrowserTester"
-      ]
-    },
-    {
-      "path": "plans/rename-ledger.md",
-      "reason": "migration map",
-      "allowed_names": [
-        "Atlas",
-        "Prometheus",
-        "Challenger",
-        "Skeptic",
-        "DryRun",
-        "Sisyphus",
-        "Frontend-Engineer",
-        "DevOps",
-        "Code-Review",
-        "Oracle",
-        "Scout",
-        "DocWriter",
-        "Challenger-subagent",
-        "Skeptic-subagent",
-        "DryRun-subagent",
-        "Sisyphus-subagent",
-        "Frontend-Engineer-subagent",
-        "DevOps-subagent",
-        "Code-Review-subagent",
-        "Oracle-subagent",
-        "Scout-subagent",
-        "DocWriter-subagent",
-        "Github-Copilot-Atlas",
-        "atlas-evals"
-      ]
-    },
-    {
-      "path": "plans/naming-migration-guide.md",
-      "reason": "migration map",
-      "allowed_names": [
-        "Atlas",
-        "Prometheus",
-        "Challenger",
-        "Skeptic",
-        "DryRun",
-        "Sisyphus",
-        "Frontend-Engineer",
-        "DevOps",
-        "Code-Review",
-        "Oracle",
-        "Scout",
-        "DocWriter",
-        "Challenger-subagent",
-        "Skeptic-subagent",
-        "DryRun-subagent",
-        "Sisyphus-subagent",
-        "Frontend-Engineer-subagent",
-        "DevOps-subagent",
-        "Code-Review-subagent",
-        "Oracle-subagent",
-        "Scout-subagent",
-        "DocWriter-subagent",
-        "Github-Copilot-Atlas",
-        "atlas-evals"
       ]
     }
   ]

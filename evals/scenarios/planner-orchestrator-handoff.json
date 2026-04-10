@@ -1,0 +1,47 @@
+{
+  "id": "planner-orchestrator-handoff",
+  "target_agent": "Planner",
+  "goal": "Planner produces a plan artifact and hands off to Orchestrator via plan_path — Orchestrator receives it and enters PLAN_REVIEW or skips based on tier",
+  "inputs": [
+    {
+      "label": "medium-plan-handoff",
+      "description": "Planner receives a medium-complexity request, produces a plan artifact, and hands off to Orchestrator. Orchestrator enters PLAN_REVIEW.",
+      "input": {
+        "query": "Refactor the authentication module to use JWT tokens across 8 files",
+        "context": "Medium complexity: cross-domain refactor touching auth, API, and config files. Planner should produce plan and delegate to Orchestrator."
+      },
+      "expected": {
+        "risk_review_present": true,
+        "planner_creates_plan_file": true,
+        "planner_emits_plan_path": true,
+        "planner_emits_complexity_tier": "MEDIUM",
+        "orchestrator_receives_plan_path": true,
+        "orchestrator_enters_plan_review": true
+      }
+    },
+    {
+      "label": "trivial-plan-handoff",
+      "description": "Planner receives a trivial request, produces a minimal plan, and hands off to Orchestrator. Orchestrator skips PLAN_REVIEW.",
+      "input": {
+        "query": "Fix the typo in README.md line 42",
+        "context": "Trivial: single file, single concern. Planner should produce plan and delegate to Orchestrator which skips PLAN_REVIEW."
+      },
+      "expected": {
+        "risk_review_present": true,
+        "planner_creates_plan_file": true,
+        "planner_emits_plan_path": true,
+        "planner_emits_complexity_tier": "TRIVIAL",
+        "orchestrator_receives_plan_path": true,
+        "orchestrator_skips_plan_review": true
+      }
+    }
+  ],
+  "assertions": [
+    "Planner always creates a plan file and emits plan_path for Orchestrator",
+    "Planner handoff message includes complexity_tier so Orchestrator can route correctly",
+    "Planner handoff remains artifact-first and chat stays a concise summary instead of inlining the plan body",
+    "Orchestrator does not treat plan_path handoff as implicit approval — it evaluates PLAN_REVIEW trigger conditions",
+    "TRIVIAL plans skip PLAN_REVIEW per runtime-policy.json; MEDIUM plans enter full PLAN_REVIEW",
+    "Semantic-risk trigger heuristics remain anchored to plans/project-context.md even when Planner emits only the saved artifact and handoff summary"
+  ]
+}

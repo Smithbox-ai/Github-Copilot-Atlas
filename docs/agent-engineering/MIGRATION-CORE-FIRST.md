@@ -1,5 +1,7 @@
 # Core-first Migration Guide
 
+This document remains the canonical reference for the shared implementation backbone and external-consolidation exit criteria. The phase sections below also remain as the historical migration record.
+
 ## Scope (Completed)
 Core agents:
 - `Orchestrator.agent.md`
@@ -88,7 +90,7 @@ Comprehensive bishx-inspired upgrade across 9 implementation phases.
 
 **Eval coverage:** 29 → 35 eval scenarios. Schema count: 13 → 15.
 
-Full implementation details: `plans/atlas-modernization-plan.md`.
+Full implementation details: `plans/archive/atlas-modernization-plan.md`.
 
 ## Phase 4: Implementer Rationalization (2026-04-05)
 

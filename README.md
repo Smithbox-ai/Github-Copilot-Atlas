@@ -19,13 +19,15 @@ A multi-agent orchestration system for VS Code Copilot. ControlFlow replaces sin
 ## Getting Started — When to Use Which Agent
 
 | Scenario | Agent | Why |
-|----------|-------|-----|
+| -------- | ----- | --- |
 | Abstract idea or vague goal | `@Planner` | Conducts an idea interview, structures the prompt, produces a phased implementation plan with architecture decisions and Mermaid diagrams. |
 | Detailed task with clear requirements | `@Orchestrator` | Dispatches subagents directly, runs verification gates, and manages the full implementation cycle phase by phase. |
 | Research question | `@Researcher` | Deep evidence-based investigation with confidence scores and source citations. |
 | Quick codebase exploration | `@CodeMapper` | Fast read-only discovery — finds files, dependencies, and entry points without modifying anything. |
 
-**Typical workflow:** Start with `@Planner` for any non-trivial task. Review and approve the generated plan. Then invoke `@Orchestrator` to execute it. Orchestrator handles all subagent coordination, review gates, and approvals automatically.
+**Typical workflow:** Start with `@Planner` to author a structured implementation plan for any non-trivial task. Review and approve the generated plan. Then invoke `@Orchestrator` to execute it.
+
+Planner authors plans, and Orchestrator owns the reviewed execution of those plans, handling all subagent coordination, review gates, and approvals automatically.
 
 ## Agent Interaction Architecture
 
@@ -97,7 +99,7 @@ graph TB
 ControlFlow adjusts its pipeline depth based on plan complexity. Simpler tasks skip unnecessary review stages.
 
 | Tier | Scope | Review Agents | Max Iterations |
-|------|-------|---------------|----------------|
+| ---- | ----- | ------------- | -------------- |
 | **TRIVIAL** | 1–2 files, single concern | None — review skipped entirely | — |
 | **SMALL** | 3–5 files, single domain | PlanAuditor | 2 |
 | **MEDIUM** | 6–15 files, cross-domain | PlanAuditor + AssumptionVerifier | 5 |
@@ -127,7 +129,7 @@ stateDiagram-v2
 ## Failure Routing
 
 | Classification | Action | Max Retries |
-|----------------|--------|-------------|
+| -------------- | ------ | ----------- |
 | `transient` | Retry same agent | 3 |
 | `fixable` | Retry with fix hint | 1 |
 | `needs_replan` | Delegate to Planner | 1 |
@@ -140,14 +142,14 @@ When any retry budget is exhausted, the phase escalates to the user with accumul
 ### Primary Agents
 
 | Agent | File | Model | Role |
-|-------|------|-------|------|
+| ----- | ---- | ----- | ---- |
 | **Orchestrator** | `Orchestrator.agent.md` | Claude Sonnet 4.6 | Conductor, gate controller, delegation |
 | **Planner** | `Planner.agent.md` | Claude Opus 4.6 | Structured planning, idea interviews |
 
 ### Specialized Subagents
 
 | Agent | File | Model | Role |
-|-------|------|-------|------|
+| ----- | ---- | ----- | ---- |
 | **Researcher** | `Researcher-subagent.agent.md` | GPT-5.4 | Evidence-first research |
 | **CodeMapper** | `CodeMapper-subagent.agent.md` | GPT-5.4 mini | Read-only codebase discovery |
 | **CodeReviewer** | `CodeReviewer-subagent.agent.md` | GPT-5.4 | Code review and safety gates |
@@ -169,7 +171,7 @@ The `clarification_request` payload is governed by `schemas/clarification-reques
 ## Reliability Model
 
 | Dimension | Description |
-|-----------|-------------|
+| --------- | ----------- |
 | **Consistency** | Deterministic statuses and gate transitions |
 | **Robustness** | Graceful behavior under paraphrase and naming drift |
 | **Predictability** | Explicit abstention when confidence or evidence is low |
@@ -183,33 +185,59 @@ Reference: `docs/agent-engineering/RELIABILITY-GATES.md`.
 
 ## Installation
 
+### Quick Start (First Run)
+
 1. Clone this repository.
-2. Copy `*.agent.md` files to your VS Code prompts directory.
-3. Copy the following directories alongside the agent files:
+2. Copy the entire repo contents to your VS Code prompts directory (or symlink it).
+3. Enable custom agents in VS Code settings:
+   ```json
+   {
+     "chat.customAgentInSubagent.enabled": true,
+     "github.copilot.chat.responsesApiReasoningEffort": "high"
+   }
+   ```
+4. Reload VS Code.
+5. Test: type `@Planner` in Copilot Chat — you should see the agent listed.
+
+### Manual Installation (Selective)
+
+1. Copy `*.agent.md` files to your VS Code prompts directory.
+2. Copy the following directories alongside the agent files:
    - `schemas/` — JSON Schema contracts
    - `docs/` — Governance policies
    - `plans/` — Plan artifacts and templates
    - `governance/` — Operational knobs and tool grants
    - `skills/` — Domain pattern library
-4. Copy `.github/copilot-instructions.md` alongside the agent files (required by all executor agents).
-5. Reload VS Code.
+3. Copy `.github/copilot-instructions.md` alongside the agent files (required by all executor agents).
+4. Reload VS Code.
+
+### Verify Installation
+
+1. Confirm directories exist: `schemas/`, `docs/agent-engineering/`, `plans/`, `governance/`, `skills/`, `evals/`.
+2. Confirm VS Code settings:
+   ```json
+   { "chat.customAgentInSubagent.enabled": true }
+   ```
+3. Run evals:
+   ```bash
+   cd evals && npm install && npm test
+   ```
+4. Smoke test: type `@Planner` or `@Orchestrator` in Copilot Chat — agents should appear in suggestions.
+
+### Install Eval Dependencies
+
+```bash
+cd evals && npm install
+```
 
 ## Configuration
-
-### VS Code Settings
-
-```json
-{
-  "chat.customAgentInSubagent.enabled": true,
-  "github.copilot.chat.responsesApiReasoningEffort": "high"
-}
-```
 
 ### Adding Custom Agents
 
 Create a new `.agent.md` file following the P.A.R.T structure (Prompt → Archive → Resources → Tools). Use any existing agent as a template.
 
 Every custom agent should include:
+
 - A JSON Schema contract in `schemas/` for documentation.
 - Non-Negotiable Rules (no fabrication, abstain on uncertainty).
 - Explicit tool restrictions in the `## Tools` section.
@@ -251,7 +279,7 @@ The `evals/` directory contains scenario fixtures for structural validation. Run
 
 ## Project Structure
 
-```
+```text
 ├── Orchestrator.agent.md          # Conductor agent
 ├── Planner.agent.md               # Planning agent
 ├── *-subagent.agent.md            # 11 specialized subagents
@@ -294,6 +322,7 @@ SOFTWARE.
 ## Acknowledgments
 
 ControlFlow was inspired by and builds upon ideas from:
+
 - [Github-Copilot-Atlas](https://github.com/bigguy345/Github-Copilot-Atlas) — original multi-agent orchestration concept for VS Code Copilot.
 - [claude-bishx](https://github.com/bish-x/claude-bishx) — agent engineering patterns and structured workflows.
 - [copilot-orchestra](https://github.com/ShepAlderson/copilot-orchestra)

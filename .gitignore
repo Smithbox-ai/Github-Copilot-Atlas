@@ -34,7 +34,8 @@ temp/
 *.bak
 *.swp
 *.swo
-
+# ── Eval warm cache ────────────────────────────────────────────
+evals/.cache/
 # ── Windows OS artifacts ──────────────────────────────────
 Thumbs.db
 Thumbs.db:encryptable
