@@ -14,6 +14,9 @@
  *   3c. Tool Grant Consistency — every agent frontmatter tools list matches the
  *                              canonical set in governance/tool-grants.json (manifest-driven;
  *                              no tool policy is hardcoded here)
+ *   3d. Agent Grant Consistency — for files listed in governance/agent-grants.json only,
+ *                              agents: frontmatter must be present, non-wildcard, and exactly
+ *                              match the manifest. Files not in the manifest are out of scope.
  *   4. P.A.R.T Section Order — every *.agent.md has Prompt→Archive→Resources→Tools
  *                              in the correct order
  *   4b. §5/§6 Compliance   — Clarification Triggers (§5) and Tool Routing Rules (§6)
@@ -54,6 +57,17 @@ function header(title) { console.log(`\n=== ${title} ===`); }
 
 // Tool policy is loaded from governance/tool-grants.json at Pass 3c runtime.
 // To update tool grants for an agent, edit governance/tool-grants.json — no changes here needed.
+
+function parseFrontmatterAgents(content) {
+  const match = content.match(/^agents:\s*\[(.*?)\]$/m);
+  if (!match) return null;
+
+  return match[1]
+    .split(',')
+    .map(entry => entry.trim())
+    .filter(Boolean)
+    .map(entry => entry.replace(/^['"]|['"]$/g, ''));
+}
 
 function parseFrontmatterTools(content) {
   const match = content.match(/^tools:\s*\[(.*?)\]$/m);
@@ -176,6 +190,7 @@ function computeStructuralFingerprint() {
     'governance/tool-grants.json',
     'governance/runtime-policy.json',
     'governance/rename-allowlist.json',
+    'governance/agent-grants.json',
   ]) hashFile(join(ROOT, rel));
   // skills index and patterns
   hashFile(join(ROOT, 'skills', 'index.md'));
@@ -440,6 +455,7 @@ const requiredArtifacts = [
   'governance/tool-grants.json',
   'governance/runtime-policy.json',
   'governance/rename-allowlist.json',
+  'governance/agent-grants.json',
 ];
 for (const artifact of requiredArtifacts) {
   if (existsSync(join(ROOT, artifact))) {
@@ -527,6 +543,48 @@ for (const agentFile of agentFiles) {
     fail(`${agentFile}: tool-set drift detected — expected [${expected.join(', ')}] (governance/tool-grants.json), got [${actual.join(', ')}]`);
   } else {
     pass(`Tool grants canonical: ${agentFile}`);
+  }
+}
+
+// ─── Pass 3d: Agent Grant Consistency ────────────────────────────────────────
+header('Pass 3d: Agent Grant Consistency');
+
+const agentGrantsPath = join(ROOT, 'governance', 'agent-grants.json');
+let canonicalAgentGrants = {};
+try {
+  canonicalAgentGrants = JSON.parse(readFileSync(agentGrantsPath, 'utf8'));
+} catch (e) {
+  fail(`governance/agent-grants.json: could not load — ${e.message}`);
+}
+
+for (const [agentFile, allowedAgents] of Object.entries(canonicalAgentGrants)) {
+  const filePath = join(ROOT, agentFile);
+  if (!existsSync(filePath)) {
+    fail(`${agentFile}: listed in agent-grants.json but file not found on disk`);
+    continue;
+  }
+
+  const content = readFileSync(filePath, 'utf8');
+  const actualAgents = parseFrontmatterAgents(content);
+
+  if (actualAgents === null) {
+    fail(`${agentFile}: missing agents: frontmatter (required by agent-grants.json)`);
+    continue;
+  }
+
+  if (actualAgents.length === 1 && actualAgents[0] === '*') {
+    fail(`${agentFile}: agents: ["*"] wildcard is not permitted — must use explicit list from agent-grants.json`);
+    continue;
+  }
+
+  const actual = [...actualAgents].sort();
+  const expected = [...allowedAgents].sort();
+  const matches = actual.length === expected.length && actual.every((a, i) => a === expected[i]);
+
+  if (!matches) {
+    fail(`${agentFile}: agents drift detected — expected [${expected.join(', ')}] (governance/agent-grants.json), got [${actual.join(', ')}]`);
+  } else {
+    pass(`Agent grants canonical: ${agentFile}`);
   }
 }
 

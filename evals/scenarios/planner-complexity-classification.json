@@ -1,0 +1,49 @@
+{
+  "scenario_id": "planner-complexity-classification-01",
+  "target_agent": "Planner",
+  "goal": "Verify Planner correctly classifies representative tasks into all four complexity tiers",
+  "description": "Planner should emit complexity_tier = TRIVIAL for ≤2 file single-concern tasks, SMALL for 3–5 file single-domain tasks, MEDIUM for 6–15 file cross-domain tasks, and LARGE for 15+ file cross-cutting tasks. Each input is a canonical representative example for its tier.",
+  "inputs": [
+    {
+      "label": "TRIVIAL",
+      "input": {
+        "task_description": "Fix a typo in README.md"
+      },
+      "expected": {
+        "complexity_tier": "TRIVIAL",
+        "risk_review_present": true
+      }
+    },
+    {
+      "label": "SMALL",
+      "input": {
+        "task_description": "Add email validation to the user registration endpoint: update the request DTO, the controller guard, and the corresponding unit test (3 files, single domain)"
+      },
+      "expected": {
+        "complexity_tier": "SMALL",
+        "risk_review_present": true
+      }
+    },
+    {
+      "label": "MEDIUM",
+      "input": {
+        "task_description": "Add cursor-based pagination to the /api/users endpoint: update controller, service, repository, database query helper, OpenAPI spec, integration test suite, and API client SDK (7 files spanning API layer, data layer, and documentation)"
+      },
+      "expected": {
+        "complexity_tier": "MEDIUM",
+        "risk_review_present": true
+      }
+    },
+    {
+      "label": "LARGE",
+      "input": {
+        "task_description": "Migrate authentication from session-based to JWT across all services, agent files, schemas, and CI configuration"
+      },
+      "expected": {
+        "complexity_tier": "LARGE",
+        "risk_review_present": true,
+        "researcher_pre_research_required": true
+      }
+    }
+  ]
+}

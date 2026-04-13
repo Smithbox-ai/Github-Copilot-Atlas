@@ -30,6 +30,7 @@
     "schemas/clarification-request.schema.json",
     "governance/tool-grants.json",
     "governance/runtime-policy.json",
+    "governance/agent-grants.json",
     "evals/validate.mjs",
     "evals/scenarios/*.json",
     "README.md",

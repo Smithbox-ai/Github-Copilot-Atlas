@@ -132,7 +132,7 @@ console.log('\n=== Planner — Behavioral Invariants ===');
     /complexity_tier/i.test(complexityGateSection) &&
     /Orchestrator/i.test(complexityGateSection) &&
     /runtime-policy\.json/i.test(complexityGateSection) &&
-    /LARGE[\s\S]*mandatory Researcher pre-research phase/i.test(complexityGateSection) &&
+    /LARGE[\s\S]*mandatory Researcher(?:-subagent)? pre-research phase/i.test(complexityGateSection) &&
     !/MEDIUM[\s\S]*(PlanAuditor|AssumptionVerifier|ExecutabilityVerifier|full review|iteration)/i.test(complexityGateSection) &&
     !/LARGE[\s\S]*(PlanAuditor|AssumptionVerifier|ExecutabilityVerifier|full review|all agents active|iteration)/i.test(complexityGateSection)
   );
@@ -147,6 +147,49 @@ console.log('\n=== Planner — Behavioral Invariants ===');
   check(
     'ABSTAIN discipline: clarification must be attempted first',
     /do not return.*ABSTAIN.*without.*clarification/i.test(src)
+  );
+
+  // ── Phase 3: delegate roster and critic ownership ─────────────────────────
+  // Parse agents: frontmatter for Planner
+  const plannerAgentsMatch = src.match(/^agents:\s*\[(.*)\]$/m);
+  const plannerAgentEntries = plannerAgentsMatch
+    ? plannerAgentsMatch[1].split(',').map(x => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+    : [];
+
+  check(
+    'Agents frontmatter: explicit non-empty roster present (non-wildcard)',
+    plannerAgentEntries.length > 0
+  );
+  check(
+    'Agents frontmatter: no wildcard "*" in roster',
+    !plannerAgentEntries.includes('*')
+  );
+  check(
+    'Agents frontmatter: exactly CodeMapper-subagent and Researcher-subagent, no extras',
+    plannerAgentEntries.length === 2 &&
+    plannerAgentEntries.includes('CodeMapper-subagent') &&
+    plannerAgentEntries.includes('Researcher-subagent')
+  );
+  check(
+    'Delegation scope: prompt restricts delegation to CodeMapper-subagent or Researcher-subagent',
+    /MUST delegate only to.*CodeMapper-subagent.*or.*Researcher-subagent/i.test(src)
+  );
+  check(
+    'Delegation scope: external agents explicitly prohibited in prompt text',
+    /External agents are prohibited/i.test(src)
+  );
+  check(
+    'Critic activation: Planner defers PLAN_REVIEW ownership to Orchestrator',
+    /those belong to Orchestrator/i.test(src)
+  );
+  check(
+    'Critic activation: Planner does not invoke PlanAuditor/AssumptionVerifier/ExecutabilityVerifier directly',
+    /No invoking PlanAuditor-subagent.*AssumptionVerifier-subagent.*or ExecutabilityVerifier-subagent/i.test(src) ||
+    /does not invoke PlanAuditor-subagent.*AssumptionVerifier-subagent.*or ExecutabilityVerifier-subagent/i.test(src)
+  );
+  check(
+    'Critic activation: complexity_tier signals which review agents to activate, routing deferred to Orchestrator',
+    /complexity_tier.*signals.*Orchestrator.*which review agents.*activate|complexity_tier.*field.*signals.*Orchestrator/i.test(src)
   );
 }
 

@@ -39,6 +39,7 @@ Agent engineering policies are in `docs/agent-engineering/`:
 - Skill library is at `skills/index.md`. Planner selects ≤3 skills per plan phase.
 - Failure taxonomy applies to all agents; PlanAuditor and AssumptionVerifier exclude `transient`.
 - P.A.R.T. section order in every agent file: **Prompt → Archive → Resources → Tools** (see `PART-SPEC.md`).
+- Orchestrator and Planner must delegate only to project-internal agents documented in `plans/project-context.md`; external/third-party agents are strictly prohibited.
 
 ## Agent System
 13 agents in the ControlFlow system:

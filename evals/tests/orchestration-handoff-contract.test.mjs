@@ -62,8 +62,8 @@ check(
   /destructive.*high.risk|high.risk.*operations/i.test(orch)
 );
 check(
-  'Trigger: risk_review HIGH + unresolved condition present',
-  /risk_review.*HIGH|HIGH.*disposition.*resolved/i.test(orch)
+  'Trigger: risk_review applicable + HIGH + unresolved condition present',
+  /applicable.*risk_review.*HIGH.*not.*resolved/i.test(orch)
 );
 
 // ──────────────────────────────────────────────
@@ -242,6 +242,80 @@ check(
 check(
   'Sequential gating: ExecutabilityVerifier runs after PlanAuditor approval',
   /ExecutabilityVerifier[\s\S]*after[\s\S]*PlanAuditor|PlanAuditor[\s\S]*APPROVED[\s\S]*dispatch[\s\S]*ExecutabilityVerifier/i.test(orch)
+);
+
+// ──────────────────────────────────────────────
+// Agent delegation roster invariants (Phase 3)
+// ──────────────────────────────────────────────
+console.log('\n=== Orchestrator — Agent Delegation Roster ===');
+
+// Parse agents: frontmatter from Orchestrator
+const orchAgentsMatch = orch.match(/^agents:\s*\[(.*)\]$/m);
+const orchAgentEntries = orchAgentsMatch
+  ? orchAgentsMatch[1].split(',').map(x => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean)
+  : [];
+
+// Load governance manifest for exact roster comparison
+const agentGrants = JSON.parse(
+  readFileSync(join(ROOT, 'governance', 'agent-grants.json'), 'utf8')
+);
+const manifestRoster = agentGrants['Orchestrator.agent.md'] ?? [];
+
+check(
+  'Agents frontmatter: matches governance/agent-grants.json manifest exactly',
+  orchAgentEntries.length === manifestRoster.length &&
+  orchAgentEntries.every(a => manifestRoster.includes(a)) &&
+  manifestRoster.every(a => orchAgentEntries.includes(a))
+);
+check(
+  'Agents frontmatter: no wildcard "*" in roster or manifest',
+  !orchAgentEntries.includes('*') && !manifestRoster.includes('*')
+);
+check(
+  'Delegation policy: external or third-party agents explicitly prohibited in prompt text',
+  /External or third-party agents are prohibited/i.test(orch)
+);
+check(
+  'Delegation policy: all targets must be Planner or project-internal subagents',
+  /All delegation must target.*Planner.*or a project subagent/i.test(orch)
+);
+
+// ──────────────────────────────────────────────
+// HIGH-risk review override invariants (Phase 3)
+// ──────────────────────────────────────────────
+console.log('\n=== Orchestrator — HIGH-Risk Review Override ===');
+
+check(
+  'HIGH-risk override: risk_review HIGH-impact applicable entry forces full pipeline regardless of tier',
+  /force full pipeline regardless of tier/i.test(orch)
+);
+check(
+  'HIGH-risk override: override is documented within the Plan Review Gate section',
+  /applicable.*risk_review.*HIGH.*not.*resolved/i.test(orch)
+);
+check(
+  'HIGH-risk override: override escalates even TRIVIAL-tier plans to full reviewer pipeline',
+  /force full pipeline regardless of tier/i.test(orch) &&
+  /TRIVIAL.*skip.*PLAN_REVIEW|TRIVIAL.*no.*PlanAuditor/i.test(orch)
+);
+
+// Scenario fixture: resolved-HIGH negative case and unresolved-HIGH positive cases
+const overrideScenario = JSON.parse(
+  readFileSync(join(ROOT, 'evals', 'scenarios', 'orchestrator-high-risk-review-override.json'), 'utf8')
+);
+const resolvedHighCase = overrideScenario.inputs.find(
+  i => i.input.risk_review?.some(r => r.applicability === 'applicable' && r.impact === 'HIGH' && r.disposition === 'resolved')
+);
+const unresolvedHighCases = overrideScenario.inputs.filter(
+  i => i.input.risk_review?.some(r => r.applicability === 'applicable' && r.impact === 'HIGH' && r.disposition !== 'resolved')
+);
+check(
+  'HIGH-risk scenario: resolved HIGH disposition does NOT trigger override',
+  resolvedHighCase !== undefined && resolvedHighCase.expected.override_triggered === false
+);
+check(
+  'HIGH-risk scenario: all unresolved-HIGH cases trigger override',
+  unresolvedHighCases.length > 0 && unresolvedHighCases.every(i => i.expected.override_triggered === true)
 );
 
 // ──────────────────────────────────────────────
