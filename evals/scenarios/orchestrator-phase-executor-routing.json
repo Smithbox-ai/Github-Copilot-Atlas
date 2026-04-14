@@ -21,7 +21,9 @@
     "must_delegate_to": "TechnicalWriter-subagent",
     "must_not_delegate_to": [
       "CoreImplementer-subagent",
-      "UIImplementer-subagent"
+      "UIImplementer-subagent",
+      "AssumptionVerifier-subagent",
+      "ExecutabilityVerifier-subagent"
     ],
     "legacy_phase_without_executor_agent": "REPLAN"
   }

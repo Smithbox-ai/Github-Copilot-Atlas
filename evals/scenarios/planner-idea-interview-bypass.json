@@ -9,6 +9,7 @@
   "expected": {
     "schema": "schemas/planner.plan.schema.json",
     "risk_review_present": true,
+    "complexity_tier_present": true,
     "idea_interview_triggered": false,
     "must_not": "invoke vscode/askQuestions for an idea interview when concrete signals are present",
     "may_use_clarification_gate": true,

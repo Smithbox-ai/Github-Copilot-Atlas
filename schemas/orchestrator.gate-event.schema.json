@@ -14,7 +14,10 @@
     "confidence",
     "requires_human_approval",
     "reason",
-    "next_action"
+    "next_action",
+    "trace_id",
+    "iteration_index",
+    "max_iterations"
   ],
   "properties": {
     "schema_version": { "type": "string", "const": "1.1.0" },

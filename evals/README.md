@@ -1,6 +1,6 @@
 # ControlFlow — Eval Suite
 
-Structural validation fixtures for the ControlFlow multi-agent system. These scenarios verify schema compliance, agent contracts, and orchestration behavior without executing live agents.
+Structural, behavioral, and orchestration validation fixtures for the ControlFlow multi-agent system. These scenarios verify schema compliance, agent contracts, and orchestration behavior without executing live agents.
 
 ## What is validated
 
@@ -18,10 +18,22 @@ Structural validation fixtures for the ControlFlow multi-agent system. These sce
 12. Semantic risk coverage — Planner `risk_review` array covers all 7 categories in every plan output.
 13. Adversarial plan review — PlanAuditor, AssumptionVerifier, and ExecutabilityVerifier contracts.
 14. Complexity-aware pipeline routing (TRIVIAL / SMALL / MEDIUM / LARGE).
-15. Prompt behavior contract — behavioral invariant regression across all agent prompts.
+15. Prompt behavior contract — behavioral invariant regression across Planner, Researcher, CodeMapper, CoreImplementer, CodeReviewer, TechnicalWriter, AssumptionVerifier, PlanAuditor, and shared policy.
 16. Orchestration handoff discipline — PLAN_REVIEW gating, delegation routing, escalation thresholds.
+17. F7 complexity tier validation for Planner scenarios.
+18. F8 reference integrity scanning for core documentation paths.
 
-## Suggested execution flow
+## Validation passes
+
+High-level grouping (see full `### Passes` table below for all intermediate sub-passes):
+
+- **Pass 1:** Schema ingestion and compilation (Ajv strict mode).
+- **Pass 2:** `scenarios/` structural hydration and mapping (includes Pass 3a, 3b, 3c, 3d, 4b).
+- **Pass 3:** Cross-scenario structural regression testing (178 checks).
+- **Pass 7:** Behavioral regressions (`prompt-behavior-contract.test.mjs` — 56 checks).
+- **Pass 8:** Orchestration validation (`orchestration-handoff-contract.test.mjs` — 49 checks).
+
+Test suite total: **283 total checks**.
 
 1. Run each scenario against the corresponding agent contract.
 2. Validate output against the matching schema in `schemas/`.
@@ -60,6 +72,8 @@ Structural validation fixtures for the ControlFlow multi-agent system. These sce
 - `scenarios/orchestrator-phase-executor-routing.json`
 - `scenarios/orchestrator-retry-backoff.json`
 - `scenarios/complexity-gate-routing.json`
+- `scenarios/orchestrator-high-risk-review-override.json` — HIGH-impact risk_review override routing
+- `scenarios/orchestrator-state-runtime-consistency.json` — State machine vs runtime-policy tier alignment
 
 ### Clarification and routing
 
@@ -90,10 +104,13 @@ Structural validation fixtures for the ControlFlow multi-agent system. These sce
 - `scenarios/planner-idea-interview-bypass.json` — Idea interview bypass
 - `scenarios/behavioral-plan-quality.json` — Plan quality behavioral checks
 - `scenarios/planner-terminal-status-artifacts.json` — ABSTAIN and REPLAN_REQUIRED artifact creation
+- `scenarios/planner-complexity-classification.json` — Complexity tier classification (TRIVIAL/SMALL/MEDIUM/LARGE)
+- `scenarios/planner-orchestrator-handoff.json` — Planner→Orchestrator plan handoff discipline
+- `scenarios/planner-reviewed-flow-routing.json` — Handoff plan enters PLAN_REVIEW gate
 
 ### Behavioral regression
 
-- `tests/prompt-behavior-contract.test.mjs` — Planner, Researcher, CodeMapper, and shared policy behavioral invariants
+- `tests/prompt-behavior-contract.test.mjs` — Planner, Researcher, CodeMapper, CoreImplementer, CodeReviewer, TechnicalWriter, AssumptionVerifier, PlanAuditor, and shared policy behavioral invariants
 - `tests/orchestration-handoff-contract.test.mjs` — Orchestrator PLAN_REVIEW gating, delegation routing, failure handling, phase verification
 
 ## Running Validations
@@ -118,14 +135,17 @@ npm test
 | Pass | What it checks |
 | ---- | -------------- |
 | **1 — Schema Validity** | All `schemas/*.schema.json` compile under `ajv` JSON Schema 2020-12. |
-| **2 — Scenario Integrity** | All `evals/scenarios/*.json` have the required identity fields and point to real agent files. Planner scenarios must assert `risk_review_present: true`. Planner terminal-status scenarios (`ABSTAIN` / `REPLAN_REQUIRED`) must assert `plan_file_created: true`. |
+| **2 — Scenario Integrity** | All `evals/scenarios/*.json` have the required identity fields and point to real agent files. Planner scenarios must assert `risk_review_present: true` and `complexity_tier_present: true`. Planner terminal-status scenarios (`ABSTAIN` / `REPLAN_REQUIRED`) must assert `plan_file_created: true`. |
 | **3 — Reference Integrity** | All backtick schema/doc references inside `*.agent.md` resolve to existing files. |
+| **3a — F7/F8 Enforcement** | F7: all Planner scenarios assert `complexity_tier_present` explicitly on every input (no vacuous pass). F8: internal markdown links and backtick code references in `README.md` and `docs/agent-engineering/*.md` resolve to files under the known top-level directories. |
 | **3b — Required Artifacts** | Shared repo-local dependencies like `.github/copilot-instructions.md`, `plans/project-context.md`, and governance docs exist. |
 | **3c — Tool Grant Consistency** | Every agent frontmatter `tools:` list matches the repository's canonical least-privilege tool set. |
+| **3d — Agent Grant Consistency** | Every agent frontmatter `agents:` list matches `governance/agent-grants.json`. |
 | **4 — P.A.R.T Section Order** | Every `*.agent.md` preserves `## Prompt` → `## Archive` → `## Resources` → `## Tools` ordering. |
+| **4b — Clarification Triggers & Tool Routing** | Every agent either has a `### Clarification` section, delegates via `NEEDS_INPUT`, or is an ABSTAIN-only role (§5). Agents with external tools must have a `### Tool Routing` section (§6). |
 | **5 — Skill Library** | Every file in `skills/patterns/` is registered in `skills/index.md` and every index entry resolves to a real file. |
 | **6 — Synthetic Rename Negative-Path Checks** | Structural guard checks: stale `target_agent`, stale `expected.schema`, and stale nested `agent` references are correctly rejected. |
-| **7 — Prompt Behavior Contract** | Behavioral invariants in Planner, Researcher, CodeMapper, and shared policy: evidence discipline, ABSTAIN rules, output contracts, quality standards. (Separate harness: `tests/prompt-behavior-contract.test.mjs`.) |
+| **7 — Prompt Behavior Contract** | Behavioral invariants across Planner, Researcher, CodeMapper, CoreImplementer, CodeReviewer, TechnicalWriter, AssumptionVerifier, PlanAuditor, and shared policy: evidence discipline, ABSTAIN rules, output contracts, quality standards. (Separate harness: `tests/prompt-behavior-contract.test.mjs`.) |
 | **8 — Orchestration Handoff Contract** | Orchestrator PLAN_REVIEW gating, complexity-aware routing, review loop convergence, failure classification routing, phase verification, todo lifecycle, trace propagation. (Separate harness: `tests/orchestration-handoff-contract.test.mjs`.) |
 
 ### Exit codes

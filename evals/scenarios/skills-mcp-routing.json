@@ -9,6 +9,7 @@
   "expected": {
     "schema": "schemas/planner.plan.schema.json",
     "risk_review_present": true,
+    "complexity_tier_present": true,
     "must_use_tool_sequence": [
       "io.github.upstash/context7/resolve-library-id",
       "io.github.upstash/context7/get-library-docs"

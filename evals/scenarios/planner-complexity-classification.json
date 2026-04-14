@@ -11,7 +11,8 @@
       },
       "expected": {
         "complexity_tier": "TRIVIAL",
-        "risk_review_present": true
+        "risk_review_present": true,
+        "complexity_tier_present": true
       }
     },
     {
@@ -21,7 +22,8 @@
       },
       "expected": {
         "complexity_tier": "SMALL",
-        "risk_review_present": true
+        "risk_review_present": true,
+        "complexity_tier_present": true
       }
     },
     {
@@ -31,7 +33,8 @@
       },
       "expected": {
         "complexity_tier": "MEDIUM",
-        "risk_review_present": true
+        "risk_review_present": true,
+        "complexity_tier_present": true
       }
     },
     {
@@ -42,6 +45,7 @@
       "expected": {
         "complexity_tier": "LARGE",
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "researcher_pre_research_required": true
       }
     }

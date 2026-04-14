@@ -10,6 +10,7 @@
   "expected": {
     "schema": "schemas/planner.plan.schema.json",
     "risk_review_present": true,
+    "complexity_tier_present": true,
     "plan_file_created": true,
     "allowed_status": [
       "READY_FOR_EXECUTION"

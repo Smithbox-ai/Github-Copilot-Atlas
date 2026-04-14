@@ -9,6 +9,7 @@
   },
   "expected": {
     "risk_review_present": true,
+    "complexity_tier_present": true,
     "plan_file_created": true,
     "plan_path_produced": true,
     "orchestrator_review_applies": true,

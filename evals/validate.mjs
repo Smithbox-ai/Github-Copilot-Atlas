@@ -300,6 +300,20 @@ for (const file of scenarioFiles) {
     }
   }
 
+  // Check Planner scenarios assert complexity_tier presence (mirrors risk_review_present enforcement)
+  if (targetAgent === 'Planner') {
+    const hasSingleExpected = scenario.expected && typeof scenario.expected === 'object';
+    const hasInputs = Array.isArray(scenario.inputs);
+    const topLevelAsserts = hasSingleExpected ? scenario.expected.complexity_tier_present === true : false;
+    const inputLevelAsserts = hasInputs && scenario.inputs.length > 0
+      ? scenario.inputs.every(i => i.expected && i.expected.complexity_tier_present === true)
+      : false;
+    if (!topLevelAsserts && !inputLevelAsserts) {
+      fail(`${file}: Planner scenario missing complexity_tier_present assertion (add to expected or each input.expected)`);
+      continue;
+    }
+  }
+
   // Check Planner terminal-status scenarios assert plan_file_created: true
   if (targetAgent === 'Planner') {
     const terminalChecks = [];
@@ -442,7 +456,65 @@ for (const agentFile of agentFiles) {
   if (!agentFailed) pass(`References clean: ${agentFile}`);
 }
 
-// ─── Pass 3b: Required Project Artifacts ─────────────────────────────────────
+// ─── Pass 3 (extended): Broader Reference Integrity — README + docs ───────────
+// Scan active documentation files for broken internal markdown links.
+// NOTE: plans/archive/ is intentionally excluded — historical references may be stale.
+const broadRefFiles = [
+  { name: 'README.md', filePath: join(ROOT, 'README.md') },
+];
+try {
+  const docsEngDir = join(ROOT, 'docs', 'agent-engineering');
+  for (const f of readdirSync(docsEngDir).sort()) {
+    if (f.endsWith('.md')) {
+      broadRefFiles.push({ name: `docs/agent-engineering/${f}`, filePath: join(docsEngDir, f) });
+    }
+  }
+} catch { /* docs dir not found — skip */ }
+
+for (const { name, filePath: docFilePath } of broadRefFiles) {
+  if (!existsSync(docFilePath)) continue;
+  const content = readFileSync(docFilePath, 'utf8');
+  let fileFailed = false;
+  // Only check paths rooted in known top-level directories (plans/archive/ excluded via non-existence)
+  const topLevelDirs = new Set(['plans', 'schemas', 'docs', 'evals', 'governance', 'skills', '.github']);
+  // Extract [text](target) markdown links and verify internal path targets exist
+  for (const match of content.matchAll(/\[[^\]]*\]\(([^)]+)\)/g)) {
+    const rawTarget = match[1];
+    // Skip external links and anchor-only references
+    if (rawTarget.startsWith('http://') || rawTarget.startsWith('https://') || rawTarget.startsWith('#')) continue;
+    // Strip fragment identifier
+    const pathPart = rawTarget.split('#')[0].trim();
+    if (!pathPart) continue;
+    // Reject path traversal sequences — no legitimate intra-repo link requires ../
+    if (pathPart.includes('..')) continue;
+    // Only check paths rooted in known top-level directories
+    const pathRootSeg = pathPart.split('/')[0];
+    if (!topLevelDirs.has(pathRootSeg)) continue;
+    if (!existsSync(join(ROOT, pathPart))) {
+      fail(`${name}: broken link → ${pathPart}`);
+      fileFailed = true;
+    }
+  }  // Also scan backtick code-formatted path references: `path/to/file.ext`
+  // Only check paths that look like file system paths (contain / and have an extension or known top-level dirs)
+  for (const match of content.matchAll(/`([^`]+)`/g)) {
+    const candidate = match[1].trim();
+    // Must contain a slash, must not be a flag/option or URL, must start with a known dir or be a relative path
+    if (!candidate.includes('/')) continue;
+    if (candidate.startsWith('http') || candidate.startsWith('#') || candidate.startsWith('-') || candidate.startsWith('*')) continue;
+    // Check only if root segment is a known top-level directory
+    const rootSeg = candidate.split('/')[0];
+    if (!topLevelDirs.has(rootSeg)) continue;
+    // Strip trailing wildcards and fragment identifiers; reject traversal sequences
+    const cleanPath = candidate.split('#')[0].replace(/\/\*.*$/, '').trim();
+    if (!cleanPath || cleanPath.endsWith('/') || cleanPath.includes('..')) continue;
+    if (!existsSync(join(ROOT, cleanPath))) {
+      fail(`${name}: broken code-path reference \u2192 ${cleanPath}`);
+      fileFailed = true;
+    }
+  }  if (!fileFailed) pass(`References clean: ${name}`);
+}
+
+
 header('Pass 3b: Required Project Artifacts');
 
 const requiredArtifacts = [

@@ -205,6 +205,14 @@ check(
   'Phase verification: review APPROVED required',
   /review.*APPROVED/i.test(orch)
 );
+check(
+  'Phase verification: CodeReviewer-subagent explicitly named as code review delegate in implementation loop',
+  /Delegate to CodeReviewer-subagent/i.test(orch)
+);
+check(
+  'Phase verification: code review mandatory for all tiers with runtime-policy reference',
+  /mandatory for all.*tiers|review_pipeline_by_tier.*code_review/i.test(orch)
+);
 
 // ──────────────────────────────────────────────
 // Todo lifecycle (blocking prerequisite)
@@ -229,6 +237,50 @@ check(
   'Trace ID: propagated to all gate events and delegations',
   /propagate.*gate.*event|propagate.*delegation/i.test(orch)
 );
+
+// ──────────────────────────────────────────────
+// Gate-event schema contract (F4)
+// ──────────────────────────────────────────────
+console.log('\n=== Orchestrator — Gate-Event Schema Contract ===');
+{
+  const gateEventSchema = JSON.parse(
+    readFileSync(join(ROOT, 'schemas', 'orchestrator.gate-event.schema.json'), 'utf8')
+  );
+  check(
+    'Gate-event schema: trace_id is in the required array (mandatory per Orchestrator prompt)',
+    Array.isArray(gateEventSchema.required) && gateEventSchema.required.includes('trace_id')
+  );
+  check(
+    'Gate-event schema: iteration_index is in the required array (mandatory per Orchestrator prompt)',
+    Array.isArray(gateEventSchema.required) && gateEventSchema.required.includes('iteration_index')
+  );
+  check(
+    'Gate-event schema: max_iterations is in the required array (mandatory per Orchestrator prompt)',
+    Array.isArray(gateEventSchema.required) && gateEventSchema.required.includes('max_iterations')
+  );
+}
+
+// ──────────────────────────────────────────────
+// Batch Approval Policy
+// ──────────────────────────────────────────────
+console.log('\n=== Orchestrator — Batch Approval Policy ===');
+{
+  const runtimePolicy = JSON.parse(
+    readFileSync(join(ROOT, 'governance', 'runtime-policy.json'), 'utf8')
+  );
+  check(
+    'Runtime policy: batch_approval.approval_per is "wave"',
+    runtimePolicy.batch_approval?.approval_per === 'wave'
+  );
+  check(
+    'Orchestrator: batch approval section specifies one approval per wave, not per phase',
+    /ONE approval request per wave/i.test(orch)
+  );
+  check(
+    'Orchestrator: batch approval exception for destructive operations requires per-phase approval',
+    /exception.*destructive.*per.?phase|destructive.*production.*per.?phase/i.test(orch)
+  );
+}
 
 // ──────────────────────────────────────────────
 // Delegation protocol: parallel dispatch

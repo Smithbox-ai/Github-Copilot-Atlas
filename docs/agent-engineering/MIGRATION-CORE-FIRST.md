@@ -78,7 +78,7 @@ Comprehensive bishx-inspired upgrade across 9 implementation phases.
 **New infrastructure:**
 - `docs/agent-engineering/SCORING-SPEC.md` — single source of truth for 7-dimension weighted scoring, cross-validated ceilings, and regression tracking.
 - `plans/templates/` — externalized plan, phase-completion, plan-completion, and verified-items templates.
-- `skills/` — skill library with index and 4 domain pattern files (TDD, error handling, security, performance).
+- `skills/` — skill library with index and 7 domain pattern files (TDD, error handling, security, performance, completeness, integration, idea-to-prompt).
 - `governance/tool-grants.json` — canonical machine-readable tool policy for validator enforcement.
 - `governance/runtime-policy.json` — Orchestrator operational knobs (review routing, retry budgets, stagnation thresholds).
 
@@ -88,7 +88,7 @@ Comprehensive bishx-inspired upgrade across 9 implementation phases.
 - PlanAuditor: 7-dimension scoring, focus-area routing, validated blocking findings.
 - CodeReviewer: 5-dimension weighted scoring, per-issue validation protocol.
 
-**Eval coverage:** 29 → 35 eval scenarios. Schema count: 13 → 15.
+**Eval coverage:** 29 → 35 eval scenarios (Phase 3). Schema count: 13 → 15. Current state as of final routing-guardrails session: 46 scenarios, 170 structural + 38 behaviour + 43 orchestration = 251 checks.
 
 Full implementation details: `plans/archive/atlas-modernization-plan.md`.
 
@@ -123,7 +123,7 @@ CoreImplementer-subagent is the canonical backbone reference. UIImplementer-suba
 - Added `evals/scenarios/code-reviewer-contract.json` — direct CodeReviewer contract fixture.
 - Added `evals/scenarios/code-mapper-contract.json` — direct CodeMapper contract fixture.
 - Added `evals/scenarios/implementer-role-differentiation.json` — guards against accidental role collapse.
-- Eval count: 37 → 40. Validator: 161/161 passing.
+- Eval count: 37 → 40 (Phase 4). Validator at that point: 161/161 passing.
 
 **Future exit criteria for external consolidation:**
 External consolidation (reducing implementer count) is not planned but remains possible if ALL of these conditions are intentionally satisfied in a future migration:

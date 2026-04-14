@@ -12,6 +12,7 @@
       },
       "expected": {
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "required_status": "ABSTAIN",
         "plan_file_created": true,
         "abstain_reasons_min": 1,
@@ -27,6 +28,7 @@
       },
       "expected": {
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "required_status": "REPLAN_REQUIRED",
         "plan_file_created": true,
         "must_include_recovery_next_step": true

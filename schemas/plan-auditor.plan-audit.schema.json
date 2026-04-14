@@ -14,7 +14,8 @@
     "plan_reference",
     "findings",
     "risk_summary",
-    "recommendation"
+    "recommendation",
+    "executability_checklist"
   ],
   "properties": {
     "schema_version": { "type": "string", "const": "1.3.0" },
@@ -193,5 +194,14 @@
       "enum": ["fixable", "needs_replan", "escalate"],
       "description": "Required when status is NEEDS_REVISION or REJECTED. Note: 'transient' is not applicable for plan audits. fixable: addressable within existing phase structure. needs_replan: fundamental flaw requiring Planner redesign. escalate: destructive or ambiguous risk requiring human decision."
     }
+  },
+  "if": {
+    "properties": {
+      "status": { "enum": ["NEEDS_REVISION", "REJECTED"] }
+    },
+    "required": ["status"]
+  },
+  "then": {
+    "required": ["failure_classification"]
   }
 }

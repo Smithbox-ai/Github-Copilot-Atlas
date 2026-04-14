@@ -196,10 +196,10 @@ Reference: `docs/agent-engineering/TOOL-ROUTING.md`
    - Resolve the phase owner from `phase.executor_agent`. This field is authoritative for delegation and approval summaries.
    - If a legacy phase omits `executor_agent`, do not infer silently. Route the plan back through `REPLAN` to Planner and stop the implementation batch until the phase is reissued with an explicit executor.
    - Delegate execution to the declared executor agent.
-   - Delegate review.
    - Verification Build Gate: after the implementation subagent reports completion, verify build success. Either confirm the execution report includes `build.state: PASS`, or if build evidence is absent or ambiguous, run the project's build command directly. If the build fails, route through Failure Classification Handling before proceeding.
-   - Block only on `validated_blocking_issues` from CodeReviewer verdict — not on raw unvalidated CRITICAL/MAJOR findings. If `validated_blocking_issues` is empty, the phase may proceed even if unvalidated issues exist.
-   - If review status is not `APPROVED`, loop with targeted revision context.
+   - Delegate to CodeReviewer-subagent for phase code review. Code review is mandatory for all complexity tiers — see `governance/runtime-policy.json → review_pipeline_by_tier.code_review`. Pass the changed files list, phase scope, and executor agent execution report.
+   - Block only on `validated_blocking_issues` from CodeReviewer-subagent verdict — not on raw unvalidated CRITICAL/MAJOR findings. If `validated_blocking_issues` is empty, the phase may proceed even if unvalidated issues exist.
+   - If CodeReviewer-subagent review status is not `APPROVED`, loop with targeted revision context.
    - Mark the completed phase's todo item as completed using the `#todos` tool.
    - Pause for user commit/continue approval.
 
@@ -214,7 +214,7 @@ Before marking any phase as complete, Orchestrator MUST verify:
 1. Tests pass — evidence from the subagent report or an independent run.
 2. Build passes — evidence from the subagent report (`build.state: PASS`) or an independent run.
 3. Lint/problems are clean — verify via `read/problems` or equivalent validation evidence.
-4. Review status is `APPROVED`.
+4. Review status is `APPROVED` per CodeReviewer-subagent verdict (`status` field in `schemas/code-reviewer.verdict.schema.json`).
 5. Phase todo item is marked as completed via the `#todos` tool.
 
 If any check fails, the phase is not complete and must route through Failure Classification Handling.

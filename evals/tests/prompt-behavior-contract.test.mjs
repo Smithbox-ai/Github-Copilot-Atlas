@@ -191,6 +191,28 @@ console.log('\n=== Planner — Behavioral Invariants ===');
     'Critic activation: complexity_tier signals which review agents to activate, routing deferred to Orchestrator',
     /complexity_tier.*signals.*Orchestrator.*which review agents.*activate|complexity_tier.*field.*signals.*Orchestrator/i.test(src)
   );
+
+  // ── Phase 2: schema-level contract checks (F1–F3) ─────────────────────────
+  {
+    const plannerSchema = JSON.parse(readFileSync(join(ROOT, 'schemas', 'planner.plan.schema.json'), 'utf8'));
+    const executorAgentEnum = plannerSchema.properties?.phases?.items?.properties?.executor_agent?.enum ?? [];
+    check(
+      'Planner: TRIVIAL risk_review shortcut must not use category "all" — seven specific not_applicable entries required',
+      !/category:\s*["']all["']/.test(src)
+    );
+    check(
+      'Planner schema: complexity_tier is in the top-level required array',
+      Array.isArray(plannerSchema.required) && plannerSchema.required.includes('complexity_tier')
+    );
+    check(
+      'Planner schema: AssumptionVerifier-subagent must NOT be in executor_agent enum (review-only)',
+      !executorAgentEnum.includes('AssumptionVerifier-subagent')
+    );
+    check(
+      'Planner schema: ExecutabilityVerifier-subagent must NOT be in executor_agent enum (review-only)',
+      !executorAgentEnum.includes('ExecutabilityVerifier-subagent')
+    );
+  }
 }
 
 // ──────────────────────────────────────────────
@@ -268,6 +290,118 @@ console.log('\n=== CodeMapper — Behavioral Invariants ===');
   check(
     'No speculation: no claims without references',
     /speculative.*claim|no.*claim.*without.*ref/i.test(src)
+  );
+}
+
+// ──────────────────────────────────────────────
+// CoreImplementer behavioral invariants (F9)
+// ──────────────────────────────────────────────
+console.log('\n=== CoreImplementer — Behavioral Invariants ===');
+{
+  const src = readAgent('CoreImplementer-subagent');
+
+  check(
+    'CoreImplementer: failure_classification present with all four values',
+    /transient/i.test(src) && /fixable/i.test(src) &&
+    /needs_replan/i.test(src) && /escalate/i.test(src)
+  );
+
+  check(
+    'CoreImplementer: COMPLETE status value documented',
+    /COMPLETE/i.test(src)
+  );
+
+  check(
+    'CoreImplementer: NEEDS_INPUT status value documented',
+    /NEEDS_INPUT/i.test(src)
+  );
+
+  check(
+    'CoreImplementer: build evidence required before reporting completion',
+    /build.*pass|build.*PASS|PASS.*build/i.test(src)
+  );
+}
+
+// ──────────────────────────────────────────────
+// CodeReviewer behavioral invariants (F9)
+// ──────────────────────────────────────────────
+console.log('\n=== CodeReviewer — Behavioral Invariants ===');
+{
+  const src = readAgent('CodeReviewer-subagent');
+
+  check(
+    'CodeReviewer: validated_blocking_issues output field documented',
+    /validated_blocking_issues/i.test(src)
+  );
+
+  check(
+    'CodeReviewer: APPROVED and NEEDS_REVISION status values present',
+    /APPROVED/i.test(src) && /NEEDS_REVISION/i.test(src)
+  );
+
+  check(
+    'CodeReviewer: blocks only on confirmed validated issues, not unvalidated findings',
+    /validated.*block|confirmed.*block|block.*confirmed/i.test(src)
+  );
+}
+
+// ──────────────────────────────────────────────
+// TechnicalWriter behavioral invariants (F9)
+// ──────────────────────────────────────────────
+console.log('\n=== TechnicalWriter — Behavioral Invariants ===');
+{
+  const src = readAgent('TechnicalWriter-subagent');
+
+  check(
+    'TechnicalWriter: documentation-only scope (no test writing/execution)',
+    /documentation.only|doc.*only/i.test(src) ||
+    /no.*test.*writ|no.*execut/i.test(src)
+  );
+
+  check(
+    'TechnicalWriter: COMPLETE status value documented',
+    /COMPLETE/i.test(src)
+  );
+}
+
+// ──────────────────────────────────────────────
+// AssumptionVerifier behavioral invariants (F9)
+// ──────────────────────────────────────────────
+console.log('\n=== AssumptionVerifier — Behavioral Invariants ===');
+{
+  const src = readAgent('AssumptionVerifier-subagent');
+
+  check(
+    'AssumptionVerifier: COMPLETE and ABSTAIN status values present (review-only, no NEEDS_REVISION)',
+    /COMPLETE/i.test(src) && /ABSTAIN/i.test(src)
+  );
+
+  check(
+    'AssumptionVerifier: blocking mirages distinguished from non-blocking',
+    /blocking.*mirage|BLOCKING/i.test(src)
+  );
+}
+
+// ──────────────────────────────────────────────
+// PlanAuditor behavioral invariants (F9)
+// ──────────────────────────────────────────────
+console.log('\n=== PlanAuditor — Behavioral Invariants ===');
+{
+  const src = readAgent('PlanAuditor-subagent');
+
+  check(
+    'PlanAuditor: APPROVED, NEEDS_REVISION, REJECTED status values present',
+    /APPROVED/i.test(src) && /NEEDS_REVISION/i.test(src) && /REJECTED/i.test(src)
+  );
+
+  check(
+    'PlanAuditor: executability_checklist output field documented',
+    /executability_checklist/i.test(src)
+  );
+
+  check(
+    'PlanAuditor: failure classification required on non-approved outcomes',
+    /Failure Classification|failure.*class/i.test(src)
   );
 }
 

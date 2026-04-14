@@ -110,5 +110,21 @@
       }
     },
     "next_steps": { "type": "array", "items": { "type": "string" } }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "enum": ["FAILED", "NEEDS_INPUT"] } },
+        "required": ["status"]
+      },
+      "then": { "required": ["failure_classification"] }
+    },
+    {
+      "if": {
+        "properties": { "status": { "enum": ["NEEDS_INPUT"] } },
+        "required": ["status"]
+      },
+      "then": { "required": ["clarification_request"] }
+    }
+  ]
 }

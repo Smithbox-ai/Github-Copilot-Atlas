@@ -13,6 +13,7 @@
       "expected": {
         "schema": "schemas/planner.plan.schema.json",
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "risk_review_must_include": [
           {
             "category": "data_volume",
@@ -39,6 +40,7 @@
       "expected": {
         "schema": "schemas/planner.plan.schema.json",
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "data_volume_must_be": "not_applicable",
         "performance_must_not_be": "applicable",
         "must_not": "add unnecessary research phases for non-applicable risks"
@@ -54,6 +56,7 @@
       "expected": {
         "schema": "schemas/planner.plan.schema.json",
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "risk_review_must_include": [
           {
             "category": "migration_rollback",

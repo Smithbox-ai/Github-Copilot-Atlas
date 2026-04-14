@@ -18,6 +18,7 @@
         "schema_version": "1.2.0",
         "agent": "Planner",
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "phases_min_count": 3,
         "diagrams_required": true,
         "diagrams_min_count": 1,
@@ -38,6 +39,7 @@
         "schema_version": "1.2.0",
         "agent": "Planner",
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "phases_max_count": 2,
         "diagrams_required": false
       }
@@ -56,6 +58,7 @@
         "schema_version": "1.2.0",
         "agent": "Planner",
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "phases_min_count": 3,
         "diagrams_required": true,
         "diagrams_min_count": 2,

@@ -12,6 +12,7 @@
       },
       "expected": {
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "planner_creates_plan_file": true,
         "planner_emits_plan_path": true,
         "planner_emits_complexity_tier": "MEDIUM",
@@ -28,6 +29,7 @@
       },
       "expected": {
         "risk_review_present": true,
+        "complexity_tier_present": true,
         "planner_creates_plan_file": true,
         "planner_emits_plan_path": true,
         "planner_emits_complexity_tier": "TRIVIAL",

@@ -141,9 +141,19 @@
         "PlanAuditor-subagent": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["task_id", "plan_path", "plan_summary"],
+          "required": ["task_id", "plan_path", "plan_summary", "trace_id", "iteration_index"],
           "properties": {
             "task_id": { "type": "string" },
+            "trace_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID v4 for log correlation across the multi-agent review chain."
+            },
+            "iteration_index": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Current iteration in the plan-review loop."
+            },
             "plan_path": {
               "type": "string",
               "minLength": 1,
@@ -172,8 +182,13 @@
         "AssumptionVerifier-subagent": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["plan_path", "plan_summary"],
+          "required": ["plan_path", "plan_summary", "trace_id", "iteration_index"],
           "properties": {
+            "trace_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID v4 for log correlation across the multi-agent review chain."
+            },
             "plan_path": {
               "type": "string",
               "minLength": 1,
@@ -199,8 +214,18 @@
         "ExecutabilityVerifier-subagent": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["plan_path", "plan_summary"],
+          "required": ["plan_path", "plan_summary", "trace_id", "iteration_index"],
           "properties": {
+            "trace_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID v4 for log correlation across the multi-agent review chain."
+            },
+            "iteration_index": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Current iteration in the plan-review loop."
+            },
             "plan_path": {
               "type": "string",
               "minLength": 1,

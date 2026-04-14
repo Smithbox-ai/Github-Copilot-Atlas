@@ -18,7 +18,7 @@ Every agent claim, finding, or recommendation must cite evidence.
 | Researcher | Every claim requires `file` + `line_start` evidence; no claim without file/line reference |
 | CodeMapper | No speculative claims without references; ABSTAIN on contradictory or insufficient results |
 | PlanAuditor | Findings reference plan sections or codebase files; severity justified by evidence |
-| CodeReviewer | Issues include file path, line range, and validation status (`confirmed`/`rejected`/`unvalidated`) |
+| CodeReviewer | Issues include file path, line number, and validation status (`confirmed`/`rejected`/`unvalidated`) |
 | AssumptionVerifier | Mirages cite specific plan text that conflates assumption with fact |
 
 ### 2. Follow-Through Discipline
@@ -78,8 +78,8 @@ Before handing off to the next agent or phase, the producing agent must generate
 
 These behavioral invariants are verified by:
 
-- `evals/tests/prompt-behavior-contract.test.mjs` — 30 checks across Planner, Researcher, CodeMapper, and shared policy
-- `evals/tests/orchestration-handoff-contract.test.mjs` — 32 checks on Orchestrator PLAN_REVIEW gating, rerun invalidation, delegation routing, failure handling, phase verification, todo lifecycle, and observability
+- `evals/tests/prompt-behavior-contract.test.mjs` — 56 checks across Planner, Researcher, CodeMapper, CoreImplementer (failure_classification), CodeReviewer (validated_blocking_issues), TechnicalWriter (doc-only scope), AssumptionVerifier (COMPLETE/ABSTAIN), PlanAuditor (executability_checklist), and shared policy
+- `evals/tests/orchestration-handoff-contract.test.mjs` — 49 checks on Orchestrator PLAN_REVIEW gating, rerun invalidation, delegation routing, failure handling, phase verification, todo lifecycle, and observability
 
 ## Relationship to Other Specs
 

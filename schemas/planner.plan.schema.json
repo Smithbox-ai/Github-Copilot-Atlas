@@ -17,6 +17,7 @@
     "risks",
     "risk_review",
     "success_criteria",
+    "complexity_tier",
     "handoff"
   ],
   "properties": {
@@ -75,9 +76,7 @@
               "PlatformEngineer-subagent",
               "TechnicalWriter-subagent",
               "BrowserTester-subagent",
-              "CodeReviewer-subagent",
-              "AssumptionVerifier-subagent",
-              "ExecutabilityVerifier-subagent"
+              "CodeReviewer-subagent"
             ],
             "description": "Primary subagent Orchestrator must dispatch for this phase. Orchestrator treats this field as authoritative and must not override it with heuristics."
           },
@@ -195,7 +194,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["category", "applicability", "impact", "disposition"],
+        "required": ["category", "applicability", "impact", "evidence_source", "disposition"],
         "properties": {
           "category": {
             "type": "string",

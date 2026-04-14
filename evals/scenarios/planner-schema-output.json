@@ -19,6 +19,7 @@
     "must_not_inline_plan_in_chat": true,
     "must_not_emit_todo_output": true,
     "risk_review_present": true,
+    "complexity_tier_present": true,
     "risk_review_covers_all_categories": true,
     "must_not": "raw JSON output to chat"
   },

@@ -134,5 +134,21 @@
       "$ref": "clarification-request.schema.json",
       "description": "Required when status is NEEDS_INPUT. Structured payload for Orchestrator to present to user via askQuestions. See schemas/clarification-request.schema.json for full contract."
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "status": { "enum": ["FAILED", "NEEDS_INPUT"] } },
+        "required": ["status"]
+      },
+      "then": { "required": ["failure_classification"] }
+    },
+    {
+      "if": {
+        "properties": { "status": { "enum": ["NEEDS_INPUT"] } },
+        "required": ["status"]
+      },
+      "then": { "required": ["clarification_request"] }
+    }
+  ]
 }

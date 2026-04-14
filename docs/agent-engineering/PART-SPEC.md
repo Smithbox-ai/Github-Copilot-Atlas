@@ -56,7 +56,7 @@ Required content:
 ## 3) Resources
 Required content:
 - Domain references used by the agent (repo files, docs, schemas).
-- Project conventions source (`project-context.md` when present).
+- Project conventions source (`plans/project-context.md` when present).
 - Reliability gate source (`docs/agent-engineering/RELIABILITY-GATES.md`).
 - Safety policy source (human approval gates and destructive action policy).
 

@@ -9,6 +9,7 @@
   "expected": {
     "schema": "schemas/planner.plan.schema.json",
     "risk_review_present": true,
+    "complexity_tier_present": true,
     "must_use_tool": "vscode/askQuestions",
     "clarification_required_because": "competing_interpretations_change_file_set_and_executor",
     "clarification_must_resolve_material_difference": true,

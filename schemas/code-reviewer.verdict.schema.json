@@ -14,7 +14,8 @@
     "issues",
     "verification_gates",
     "security_checks",
-    "next_steps"
+    "next_steps",
+    "validated_blocking_issues"
   ],
   "properties": {
     "schema_version": { "type": "string", "const": "1.2.0" },
@@ -156,5 +157,14 @@
       "enum": ["transient", "fixable", "needs_replan", "escalate"],
       "description": "Required when status is NEEDS_REVISION or FAILED. Classifies the failure type for Orchestrator routing."
     }
+  },
+  "if": {
+    "properties": {
+      "status": { "enum": ["NEEDS_REVISION", "FAILED"] }
+    },
+    "required": ["status"]
+  },
+  "then": {
+    "required": ["failure_classification"]
   }
 }
