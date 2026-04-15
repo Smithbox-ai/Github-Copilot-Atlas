@@ -62,7 +62,17 @@ For all other scopes, record applicability, impact, evidence source, and disposi
   4. Include selected skill file paths in each applicable phase's `skill_references` array.
   Implementation agents load referenced skills before executing phase tasks.
 6. Research (delegate CodeMapper-subagent/Researcher-subagent when scope is large).
-7. Design (architecture choices and constraints).
+7. Design (structured design decisions and diagram selection):
+   - **Design Decisions Checklist** — Before proceeding to Planning (Step 8), explicitly address four dimensions:
+     1. **Boundary changes** — Does the task change system boundaries, add new actors, or modify integration points? If no boundary changes, state "No boundary changes."
+     2. **Data/artifact flow** — What data, files, or artifacts flow between components? Are stores, tool I/O, or memory surfaces affected?
+     3. **Temporal choreography** — What is the execution order? Are there parallel paths, approval gates, review loops, retries, or conditional branches?
+     4. **Constraints & trade-offs** — What design constraints apply? What trade-offs were considered and decided?
+   - **Tier-Gated Diagram Selector** — Based on `complexity_tier` (from Step 4), determine supplemental diagram requirements:
+     - **TRIVIAL / SMALL:** No supplemental diagrams required beyond the DAG baseline (Plan Quality Standard #8).
+     - **MEDIUM:** If the plan involves review loops, parallel waves, approval gates, or non-trivial temporal flow, include a Mermaid `sequenceDiagram` alongside the phase dependency DAG.
+     - **LARGE:** Always include a Mermaid `sequenceDiagram` alongside the phase dependency DAG.
+   - Record design decisions in the plan artifact's "Design Decisions" section (see plan document template).
 8. Planning (phase decomposition with quality gates).
 9. Handoff (artifact-first plan file plus `plan_path` handoff for Orchestrator; PLAN_REVIEW ownership remains with Orchestrator).
 
@@ -179,7 +189,7 @@ Every plan must satisfy:
 5. **Practical** — Phase count is 3–10; decompose further if exceeding 10.
 6. **Parallelizable** — Phases that can run independently MUST be assigned the same wave number. Sequential-only when there is a real data dependency.
 7. **Routable** — Every phase MUST specify exactly one `executor_agent` so Orchestrator can dispatch it without inference.
-8. **Visualized** — Plans with 3+ phases MUST include an Architecture Visualization section with at least a phase dependency DAG in Mermaid format.
+8. **Visualized** — Plans with 3+ phases MUST include an Architecture Visualization section with at least a phase dependency DAG in Mermaid format. Additionally: MEDIUM-complexity plans with non-trivial orchestration flow (review loops, parallel waves, approval gates) MUST include a Mermaid `sequenceDiagram`. LARGE-complexity plans MUST always include a Mermaid `sequenceDiagram`.
 9. **Failure-aware** — Each phase includes failure expectations with classification and mitigation strategies.
 10. **Executable** — Each phase MUST specify: concrete file paths, input/output contracts, verification commands, test specifics, and the owning `executor_agent` sufficient for a cold-start executor to proceed without additional clarification. Vague steps like "implement the feature" without file-level detail are non-compliant.
 11. **Risk-reviewed** — Every plan MUST include a populated `risk_review` array covering all 7 semantic risk categories (`data_volume`, `performance`, `concurrency`, `access_control`, `migration_rollback`, `dependency`, `operability`). Each entry must state applicability, impact, evidence source, and disposition. Plans with any `HIGH`-impact `open_question` entry must include a research phase to resolve it before implementation begins.

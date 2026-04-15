@@ -406,6 +406,123 @@ console.log('\n=== PlanAuditor — Behavioral Invariants ===');
 }
 
 // ──────────────────────────────────────────────
+// Planner — Design Step (Step 7) assertions
+// ──────────────────────────────────────────────
+console.log('\n=== Planner — Design Step (Step 7) ===');
+{
+  const src = readAgent('Planner');
+
+  check(
+    'Design checklist: Boundary changes dimension present',
+    /Boundary/i.test(src)
+  );
+
+  check(
+    'Design checklist: Data/artifact flow dimension present',
+    /data.*artifact.*flow|Data\/artifact flow/i.test(src)
+  );
+
+  check(
+    'Design checklist: Temporal choreography dimension present',
+    /temporal/i.test(src)
+  );
+
+  check(
+    'Design checklist: Constraints & trade-offs dimension present',
+    /Constraints/i.test(src) && /trade-offs/i.test(src)
+  );
+
+  check(
+    'Tier-gated diagrams: TRIVIAL and SMALL exempt from supplemental diagrams',
+    /TRIVIAL.*SMALL.*No supplemental diagrams|TRIVIAL \/ SMALL.*No supplemental/i.test(src)
+  );
+
+  check(
+    'Tier-gated diagrams: MEDIUM conditionally requires sequenceDiagram',
+    /MEDIUM.*sequenceDiagram/i.test(src)
+  );
+
+  check(
+    'Tier-gated diagrams: LARGE unconditionally requires sequenceDiagram',
+    /LARGE.*Always include.*sequenceDiagram/i.test(src)
+  );
+}
+
+// ──────────────────────────────────────────────
+// Plan Template — Design Decisions section
+// ──────────────────────────────────────────────
+console.log('\n=== Plan Template — Design Decisions Section ===');
+{
+  const template = readFileSync(join(ROOT, 'plans', 'templates', 'plan-document-template.md'), 'utf8');
+
+  check(
+    'Template: "### Design Decisions" section heading present',
+    /^### Design Decisions$/m.test(template)
+  );
+
+  check(
+    'Template: "#### Architectural Choices" subsection present',
+    /^#### Architectural Choices$/m.test(template)
+  );
+
+  check(
+    'Template: "#### Boundary & Integration Points" subsection present',
+    /^#### Boundary & Integration Points$/m.test(template)
+  );
+
+  check(
+    'Template: "#### Temporal Flow" subsection present',
+    /^#### Temporal Flow$/m.test(template)
+  );
+
+  check(
+    'Template: "#### Constraints & Trade-offs" subsection present',
+    /^#### Constraints & Trade-offs$/m.test(template)
+  );
+
+  check(
+    'Template: Architecture Visualization — MEDIUM tier requires sequenceDiagram',
+    /MEDIUM/i.test(template) && /sequenceDiagram/i.test(template)
+  );
+
+  check(
+    'Template: Architecture Visualization — LARGE tier requires sequenceDiagram',
+    /LARGE/i.test(template) && /sequenceDiagram/i.test(template)
+  );
+
+  check(
+    'Template: Architecture Visualization — Baseline DAG for 3+ phases',
+    /3\+?\s*phases/i.test(template) && /DAG/i.test(template)
+  );
+}
+
+// ──────────────────────────────────────────────
+// Mermaid Scenario — medium-tier case
+// ──────────────────────────────────────────────
+console.log('\n=== Mermaid Scenario — medium-tier-requires-sequence-diagram ===');
+{
+  const scenario = JSON.parse(readFileSync(join(ROOT, 'evals', 'scenarios', 'planner-mermaid-output.json'), 'utf8'));
+  const mediumInput = scenario.inputs?.find(i => i.label === 'medium-tier-requires-sequence-diagram');
+
+  check(
+    'Mermaid scenario: medium-tier-requires-sequence-diagram input case exists',
+    mediumInput != null
+  );
+
+  check(
+    'Mermaid scenario: medium-tier expected.diagrams_must_include_types contains "flowchart"',
+    Array.isArray(mediumInput?.expected?.diagrams_must_include_types) &&
+    mediumInput.expected.diagrams_must_include_types.includes('flowchart')
+  );
+
+  check(
+    'Mermaid scenario: medium-tier expected.diagrams_must_include_types contains "sequenceDiagram"',
+    Array.isArray(mediumInput?.expected?.diagrams_must_include_types) &&
+    mediumInput.expected.diagrams_must_include_types.includes('sequenceDiagram')
+  );
+}
+
+// ──────────────────────────────────────────────
 // Shared policy behavioral invariants
 // ──────────────────────────────────────────────
 console.log('\n=== Shared Policy — Behavioral Invariants ===');

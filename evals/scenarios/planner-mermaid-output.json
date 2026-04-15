@@ -68,6 +68,28 @@
           "stateDiagram-v2"
         ]
       }
+    },
+    {
+      "label": "medium-tier-requires-sequence-diagram",
+      "description": "A MEDIUM-complexity plan with parallel waves and approval gates must include both a flowchart DAG and a sequenceDiagram",
+      "input": {
+        "task_description": "Implement a 4-phase workflow with parallel review dispatch, approval gates, and wave-based execution across 8 files",
+        "constraints": [
+          "MEDIUM complexity tier",
+          "Has parallel waves",
+          "Has approval gates"
+        ]
+      },
+      "expected": {
+        "schema_version": "1.2.0",
+        "agent": "Planner",
+        "risk_review_present": true,
+        "complexity_tier_present": true,
+        "phases_min_count": 3,
+        "diagrams_required": true,
+        "diagrams_min_count": 2,
+        "diagrams_must_include_types": ["flowchart", "sequenceDiagram"]
+      }
     }
   ],
   "assertions": [
@@ -76,6 +98,7 @@
     "Each diagram has non-empty title and mermaid_source fields",
     "Diagram mermaid_source is valid Mermaid syntax",
     "Plans with fewer than 3 phases may omit diagrams",
-    "Output conforms to schemas/planner.plan.schema.json version 1.2.0"
+    "Output conforms to schemas/planner.plan.schema.json version 1.2.0",
+    "MEDIUM-complexity plans with non-trivial orchestration flow include both flowchart and sequenceDiagram"
   ]
 }

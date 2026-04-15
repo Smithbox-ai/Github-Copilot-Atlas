@@ -7,7 +7,7 @@ A multi-agent orchestration system for VS Code Copilot. ControlFlow replaces sin
 - **Context-Efficient Output** — agents return structured text summaries instead of raw JSON, conserving context tokens across delegation chains.
 - **Least-Privilege Tool Grants** — each agent's `tools:` frontmatter is trimmed to the minimum set required by its role.
 - **Parallel Agent Execution** — Orchestrator dispatches independent subagents in parallel using wave-based execution from Planner plans.
-- **Structured Planning** — Planner produces phased plans with `complexity_tier` required by schema, task IDs, dependencies, wave assignments, inter-phase contracts, failure expectations, and Mermaid architecture diagrams. `AssumptionVerifier-subagent` and `ExecutabilityVerifier-subagent` are review-only roles, NOT valid `executor_agent` values.
+- **Structured Planning** — Planner produces phased plans with `complexity_tier` required by schema, task IDs, dependencies, wave assignments, inter-phase contracts, failure expectations, and tier-gated Mermaid diagrams. Plans include a mandatory **Design Decisions** section (boundary changes, data/artifact flow, temporal choreography, constraints). MEDIUM-complexity plans with non-trivial orchestration flow and all LARGE plans require a `sequenceDiagram` in addition to the phase dependency DAG. `AssumptionVerifier-subagent` and `ExecutabilityVerifier-subagent` are review-only roles, NOT valid `executor_agent` values.
 - **Adversarial Plan Review** — PlanAuditor, AssumptionVerifier, and ExecutabilityVerifier audit complex plans before implementation begins.
 - **Semantic Risk Discovery** — Planner evaluates 7 non-functional risk categories (`data_volume`, `performance`, `concurrency`, `access_control`, `migration_rollback`, `dependency`, `operability`) before research delegation. For TRIVIAL-tier plans, it emits 7 explicit `not_applicable` entries rather than a shortcut category.
 - **Reliability Gates** — PreFlect (pre-execution review), human approval gates for destructive operations, and explicit abstention when confidence is low. Gate-event metadata (`trace_id`, `iteration_index`, `max_iterations`) are schema-required for execution continuity.
@@ -15,7 +15,7 @@ A multi-agent orchestration system for VS Code Copilot. ControlFlow replaces sin
 - **Failure Taxonomy** — all agents classify failures (`transient`, `fixable`, `needs_replan`, `escalate`) enabling automated retry and routing.
 - **Batch Approval** — one approval per execution wave to reduce approval fatigue, with per-phase approval for destructive operations.
 - **Health-First Testing** — BrowserTester verifies application health before running E2E scenarios to eliminate false positives.
-- **Eval Command Coverage** — test suite covers 283 checks (178 structural + 56 behavior + 49 orchestration) running offline without live agents. F8 reference integrity scan validates all internal links in `README.md` and `docs/agent-engineering/*.md`.
+- **Eval Command Coverage** — test suite covers 302 checks (179 structural + 74 behavior + 49 orchestration) running offline without live agents. F8 reference integrity scan validates all internal links in `README.md` and `docs/agent-engineering/*.md`. Behavior suite includes Design Step contract checks, tier-gated diagram policy assertions, and template structure validation.
 - **Skill Library** — 7 domain-specific skill patterns (Testing, Error Handling, Security, Performance, Completeness, Integration, Idea-to-Prompt) that Planner selects per phase and implementation agents load at execution time.
 
 ## Getting Started — When to Use Which Agent
@@ -277,7 +277,7 @@ All agents classify failures into four categories. Orchestrator routes each cate
 
 ## Evaluation Suite
 
-The `evals/` directory contains structural, behavioral, and orchestration validation fixtures. Run `cd evals && npm test` to verify schema compliance, reference integrity, P.A.R.T section ordering, tool grant consistency, behavioral invariants, and orchestration handoff discipline across all agents (283 checks total). See `evals/README.md` for details.
+The `evals/` directory contains structural, behavioral, and orchestration validation fixtures. Run `cd evals && npm test` to verify schema compliance, reference integrity, P.A.R.T section ordering, tool grant consistency, behavioral invariants, and orchestration handoff discipline across all agents (302 checks total: 179 structural + 74 behavior + 49 orchestration). See `evals/README.md` for details.
 
 ## Project Structure
 
