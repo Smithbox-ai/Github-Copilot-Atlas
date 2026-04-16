@@ -2,7 +2,7 @@
 description: 'Autonomous planner that writes comprehensive implementation plans and feeds them to Orchestrator'
 tools: [read/readFile, agent/runSubagent, edit/createFile, search/codebase, search/fileSearch, search/listDirectory, search/textSearch, search/usages, web/fetch, web/githubRepo, vscode/askQuestions, vscode/getProjectSetupInfo, io.github.upstash/context7/get-library-docs, io.github.upstash/context7/resolve-library-id]
 agents: ["CodeMapper-subagent", "Researcher-subagent"]
-model: Claude Opus 4.6 (copilot)
+model: Claude Opus 4.7 (copilot)
 handoffs:
   - label: Start implementation with Orchestrator
     agent: Orchestrator
