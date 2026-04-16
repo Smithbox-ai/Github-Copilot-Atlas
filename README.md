@@ -24,6 +24,9 @@ A multi-agent orchestration system for VS Code Copilot. ControlFlow replaces sin
 # 1. Clone and set up
 git clone https://github.com/Smithbox-ai/ControlFlow.git
 # 2. Copy contents to your VS Code prompts directory (or symlink)
+#    Windows: %APPDATA%\Code\User\prompts
+#    macOS:   ~/Library/Application Support/Code/User/prompts
+#    Linux:   ~/.config/Code/User/prompts
 # 3. Enable in VS Code settings:
 ```
 ```json
@@ -222,8 +225,13 @@ Reference: `docs/agent-engineering/RELIABILITY-GATES.md`.
 
 ### Quick Start (First Run)
 
+> **VS Code prompts directory paths:**
+> - **Windows:** `%APPDATA%\Code\User\prompts` (e.g. `C:\Users\<you>\AppData\Roaming\Code\User\prompts`)
+> - **macOS:** `~/Library/Application Support/Code/User/prompts`
+> - **Linux:** `~/.config/Code/User/prompts`
+
 1. Clone this repository.
-2. Copy the entire repo contents to your VS Code prompts directory (or symlink it).
+2. Copy the entire repo contents into the prompts directory above (or symlink the repo there).
 3. Enable custom agents in VS Code settings:
    ```json
    {
@@ -237,15 +245,17 @@ Reference: `docs/agent-engineering/RELIABILITY-GATES.md`.
 
 ### Manual Installation (Selective)
 
-1. Copy `*.agent.md` files to your VS Code prompts directory.
-2. Copy the following directories alongside the agent files:
-   - `schemas/` — JSON Schema contracts
-   - `docs/` — Governance policies
-   - `plans/` — Plan artifacts and templates
-   - `governance/` — Operational knobs and tool grants
-   - `skills/` — Domain pattern library
-3. Copy `.github/copilot-instructions.md` alongside the agent files (required by all executor agents).
-4. Reload VS Code.
+Copy only what you need into the prompts directory (same paths as above):
+
+1. `*.agent.md` files — the agents themselves
+2. `schemas/` — JSON Schema contracts (referenced by agents)
+3. `docs/agent-engineering/` — governance policies (referenced by agents at runtime)
+4. `plans/` — plan artifacts and templates
+5. `governance/` — operational knobs and tool grants
+6. `skills/` — domain pattern library
+7. `.github/copilot-instructions.md` — **required** — shared policy read by all executor agents
+
+Without `.github/copilot-instructions.md` agents will not have access to shared failure classification, conventions, and governance references.
 
 ### Verify Installation
 
