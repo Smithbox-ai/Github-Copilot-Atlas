@@ -7,52 +7,62 @@
 
 A multi-agent orchestration system for VS Code Copilot. ControlFlow replaces single-agent workflows with a coordinated team of 13 specialized agents governed by deterministic **P.A.R.T contracts** (Prompt → Archive → Resources → Tools), structured text outputs, and reliability gates.
 
-## How It Works
+## Why ControlFlow?
 
-**Turn any vague idea into working code in three steps:**
+| | Single Agent | ControlFlow (13 agents) |
+|---|---|---|
+| **Planning** | Agent guesses architecture on-the-fly | Planner runs structured idea interview, produces phased plan with Mermaid diagrams |
+| **Quality gates** | None — hope for the best | PlanAuditor + AssumptionVerifier + ExecutabilityVerifier audit before implementation |
+| **Execution** | Sequential, monolithic | Wave-based parallel execution with inter-phase contracts |
+| **Failures** | Silent or catastrophic | Classified (`transient`/`fixable`/`needs_replan`/`escalate`) with automatic retry routing |
+| **Scope drift** | Common — agent "improves" unrelated code | [LLM Behavior Guidelines](skills/patterns/llm-behavior-guidelines.md) enforce surgical changes |
+| **Verification** | Manual | 303 offline eval checks + CodeReviewer gates every phase |
 
+## Quick Start (60 Seconds)
+
+```bash
+# 1. Clone and set up
+git clone https://github.com/Smithbox-ai/ControlFlow.git
+# 2. Copy contents to your VS Code prompts directory (or symlink)
+# 3. Enable in VS Code settings:
 ```
-1. @Planner  "Add OAuth login with Google"
-   → Idea interview → phased plan → Mermaid architecture diagram
-
-2. Approve the plan
-
-3. @Orchestrator  (runs automatically)
-   → PlanAuditor reviews → CoreImplementer + TechnicalWriter execute in parallel
-   → CodeReviewer gates each phase → done
+```json
+{ "chat.customAgentInSubagent.enabled": true }
+```
+```
+4. Reload VS Code → type @Planner in Copilot Chat → done
 ```
 
-Each agent operates within strict P.A.R.T contracts — deterministic status outputs, least-privilege tool grants, and explicit failure classification — so you get predictable, auditable results instead of unpredictable single-agent sprawl.
+> **First task?** Type `@Planner "Add OAuth login with Google"` — the system handles the rest.
+
+## When to Use Which Agent
+
+| Scenario | Agent | What happens |
+| -------- | ----- | ------------ |
+| Abstract idea or vague goal | `@Planner` | Idea interview → phased plan → Mermaid diagram |
+| Detailed task, clear requirements | `@Orchestrator` | Dispatches subagents → verification gates → phase-by-phase execution |
+| Research question | `@Researcher` | Evidence-based investigation with confidence scores |
+| Quick codebase exploration | `@CodeMapper` | Read-only discovery — files, dependencies, entry points |
+
+**Typical workflow:** `@Planner` authors a plan → you approve → `@Orchestrator` executes it with full subagent coordination, review gates, and approvals.
 
 ## Key Features
 
-- **Context-Efficient Output** — agents return structured text summaries instead of raw JSON, conserving context tokens across delegation chains.
-- **Least-Privilege Tool Grants** — each agent's `tools:` frontmatter is trimmed to the minimum set required by its role.
-- **Parallel Agent Execution** — Orchestrator dispatches independent subagents in parallel using wave-based execution from Planner plans.
-- **Structured Planning** — Planner produces phased plans with `complexity_tier` required by schema, task IDs, dependencies, wave assignments, inter-phase contracts, failure expectations, and tier-gated Mermaid diagrams. Plans include a mandatory **Design Decisions** section (boundary changes, data/artifact flow, temporal choreography, constraints). MEDIUM-complexity plans with non-trivial orchestration flow and all LARGE plans require a `sequenceDiagram` in addition to the phase dependency DAG. `AssumptionVerifier-subagent` and `ExecutabilityVerifier-subagent` are review-only roles, NOT valid `executor_agent` values.
-- **Adversarial Plan Review** — PlanAuditor, AssumptionVerifier, and ExecutabilityVerifier audit complex plans before implementation begins.
-- **Semantic Risk Discovery** — Planner evaluates 7 non-functional risk categories (`data_volume`, `performance`, `concurrency`, `access_control`, `migration_rollback`, `dependency`, `operability`) before research delegation. For TRIVIAL-tier plans, it emits 7 explicit `not_applicable` entries rather than a shortcut category.
-- **Reliability Gates** — PreFlect (pre-execution review), human approval gates for destructive operations, and explicit abstention when confidence is low. Gate-event metadata (`trace_id`, `iteration_index`, `max_iterations`) are schema-required for execution continuity.
-- **TDD Integration** — CodeReviewer and implementation agents enforce test-first methodology.
-- **Failure Taxonomy** — all agents classify failures (`transient`, `fixable`, `needs_replan`, `escalate`) enabling automated retry and routing.
-- **Batch Approval** — one approval per execution wave to reduce approval fatigue, with per-phase approval for destructive operations.
-- **Health-First Testing** — BrowserTester verifies application health before running E2E scenarios to eliminate false positives.
-- **Eval Command Coverage** — test suite covers 303 checks (180 structural + 74 behavior + 49 orchestration) running offline without live agents. F8 reference integrity scan validates all internal links in `README.md` and `docs/agent-engineering/*.md`. Behavior suite includes Design Step contract checks, tier-gated diagram policy assertions, and template structure validation.
-- **Skill Library** — 8 domain-specific skill patterns (Testing, Error Handling, Security, Performance, Completeness, Integration, Idea-to-Prompt, LLM Behavior Guidelines) that Planner selects per phase and implementation agents load at execution time.
-- **LLM Behavior Guidelines** — a dedicated skill pattern derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) that guards against systematic agent anti-patterns: silent assumption-making, over-abstraction, scope drift, and unverifiable task definitions. CoreImplementer, UIImplementer, and CodeReviewer load this skill to enforce surgical changes, simplicity-first implementation, and goal-driven execution with explicit `[Step] → verify: [check]` criteria.
-
-## Getting Started — When to Use Which Agent
-
-| Scenario | Agent | Why |
-| -------- | ----- | --- |
-| Abstract idea or vague goal | `@Planner` | Conducts an idea interview, structures the prompt, produces a phased implementation plan with architecture decisions and Mermaid diagrams. |
-| Detailed task with clear requirements | `@Orchestrator` | Dispatches subagents directly, runs verification gates, and manages the full implementation cycle phase by phase. |
-| Research question | `@Researcher` | Deep evidence-based investigation with confidence scores and source citations. |
-| Quick codebase exploration | `@CodeMapper` | Fast read-only discovery — finds files, dependencies, and entry points without modifying anything. |
-
-**Typical workflow:** Start with `@Planner` to author a structured implementation plan for any non-trivial task. Review and approve the generated plan. Then invoke `@Orchestrator` to execute it.
-
-Planner authors plans, and Orchestrator owns the reviewed execution of those plans, handling all subagent coordination, review gates, and approvals automatically.
+| Feature | Description |
+|---------|-------------|
+| **Structured Planning** | Phased plans with complexity tiers, task IDs, wave assignments, Mermaid diagrams, and mandatory Design Decisions section |
+| **Adversarial Plan Review** | Up to 3 independent reviewers (PlanAuditor, AssumptionVerifier, ExecutabilityVerifier) audit plans before implementation |
+| **Semantic Risk Discovery** | 7 non-functional risk categories evaluated before research delegation |
+| **Wave-Based Parallel Execution** | Independent phases dispatched in parallel, respecting inter-phase dependencies |
+| **Failure Taxonomy** | `transient`/`fixable`/`needs_replan`/`escalate` with deterministic retry routing |
+| **Least-Privilege Tool Grants** | Each agent's tools trimmed to the minimum required by its role |
+| **Context-Efficient Output** | Structured text summaries instead of raw JSON — saves context tokens across delegation chains |
+| **Reliability Gates** | PreFlect pre-execution review, human approval for destructive ops, explicit abstention on low confidence |
+| **TDD Integration** | CodeReviewer and implementation agents enforce test-first methodology |
+| **Batch Approval** | One approval per wave; per-phase for destructive operations |
+| **Health-First Testing** | BrowserTester verifies app health before E2E scenarios |
+| **303 Offline Eval Checks** | 180 structural + 74 behavior + 49 orchestration — no live agents needed |
+| **8 Skill Patterns** | Testing, Error Handling, Security, Performance, Completeness, Integration, Idea-to-Prompt, [LLM Behavior Guidelines](skills/patterns/llm-behavior-guidelines.md) |
 
 ## Agent Interaction Architecture
 
@@ -222,7 +232,8 @@ Reference: `docs/agent-engineering/RELIABILITY-GATES.md`.
    }
    ```
 4. Reload VS Code.
-5. Test: type `@Planner` in Copilot Chat — you should see the agent listed.
+5. Verify: type `@Planner` in Copilot Chat — you should see the agent listed.
+6. Run evals: `cd evals && npm install && npm test`
 
 ### Manual Installation (Selective)
 
@@ -238,22 +249,11 @@ Reference: `docs/agent-engineering/RELIABILITY-GATES.md`.
 
 ### Verify Installation
 
-1. Confirm directories exist: `schemas/`, `docs/agent-engineering/`, `plans/`, `governance/`, `skills/`, `evals/`.
-2. Confirm VS Code settings:
-   ```json
-   { "chat.customAgentInSubagent.enabled": true }
-   ```
-3. Run evals:
-   ```bash
-   cd evals && npm install && npm test
-   ```
-4. Smoke test: type `@Planner` or `@Orchestrator` in Copilot Chat — agents should appear in suggestions.
-
-### Install Eval Dependencies
-
 ```bash
-cd evals && npm install
+cd evals && npm install && npm test
 ```
+
+Smoke test: type `@Planner` or `@Orchestrator` in Copilot Chat — agents should appear in suggestions.
 
 ## Configuration
 
