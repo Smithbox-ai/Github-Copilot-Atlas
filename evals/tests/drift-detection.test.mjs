@@ -30,6 +30,7 @@ import {
   extractCheckCounts,
   checkCountConsistency,
   validateByTierShape,
+  validateReviewScopeFinalCoupling,
 } from '../drift-checks.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -570,6 +571,56 @@ console.log('\n=== Check #9 — Rule 6 / Tool Output Spill presence in TOOL-ROUT
   check(
     'D2: TOOL-ROUTING.md references "tool_output_policy"',
     content.includes('tool_output_policy')
+  );
+}
+
+// ──────────────────────────────────────────────
+// Check #10 — review_scope=final bidirectional coupling
+// ──────────────────────────────────────────────
+console.log('\n=== Check #10 — review_scope=final bidirectional coupling ===');
+{
+  // Positive: both agent and schema reference "final" → ok=true
+  const agentWithFinal = '## Prompt\n\n### Final Scope (`review_scope=final`)\n\nsome text\n';
+  const schemaWithFinal = { properties: { review_scope: { enum: ['phase', 'wave', 'final'] } } };
+  const pos = validateReviewScopeFinalCoupling(agentWithFinal, schemaWithFinal);
+  check(
+    'F1: both agent references review_scope=final and schema enum has "final" → ok=true',
+    pos.ok === true && pos.agentReferencesFinal === true && pos.schemaHasFinal === true,
+    `ok=${pos.ok}, agentReferencesFinal=${pos.agentReferencesFinal}, schemaHasFinal=${pos.schemaHasFinal}`
+  );
+
+  // Negative: agent references "final" but schema enum lacks it → drift detected
+  const schemaMissingFinal = { properties: { review_scope: { enum: ['phase', 'wave'] } } };
+  const n1 = validateReviewScopeFinalCoupling(agentWithFinal, schemaMissingFinal);
+  check(
+    'F2: agent references review_scope=final but schema enum lacks "final" → drift detected',
+    n1.ok === false && n1.errors.length > 0 && n1.agentReferencesFinal === true && n1.schemaHasFinal === false,
+    `ok=${n1.ok}, errors=${JSON.stringify(n1.errors)}`
+  );
+
+  // Negative: schema has "final" but agent never references it → drift detected
+  const agentWithoutFinal = '## Prompt\n\nThis agent does not mention final scope.\n';
+  const n2 = validateReviewScopeFinalCoupling(agentWithoutFinal, schemaWithFinal);
+  check(
+    'F3: schema review_scope enum contains "final" but agent has no reference → drift detected',
+    n2.ok === false && n2.errors.length > 0 && n2.agentReferencesFinal === false && n2.schemaHasFinal === true,
+    `ok=${n2.ok}, errors=${JSON.stringify(n2.errors)}`
+  );
+
+  // Real-world positive: actual CodeReviewer-subagent.agent.md + code-reviewer.verdict.schema.json must be coupled
+  const ROOT_REAL = join(__dirname, '..', '..');
+  const realAgent = existsSync(join(ROOT_REAL, 'CodeReviewer-subagent.agent.md'))
+    ? readFileSync(join(ROOT_REAL, 'CodeReviewer-subagent.agent.md'), 'utf8')
+    : '';
+  let realSchema = {};
+  try {
+    realSchema = JSON.parse(readFileSync(join(ROOT_REAL, 'schemas', 'code-reviewer.verdict.schema.json'), 'utf8'));
+  } catch { /* will fail below */ }
+  const realResult = validateReviewScopeFinalCoupling(realAgent, realSchema);
+  check(
+    'F4: actual CodeReviewer-subagent.agent.md and code-reviewer.verdict.schema.json are coupled',
+    realResult.ok === true,
+    realResult.ok ? '' : `errors=${JSON.stringify(realResult.errors)}`
   );
 }
 

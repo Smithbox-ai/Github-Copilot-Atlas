@@ -333,3 +333,33 @@ export function validateByTierShape(routingJson) {
   }
   return { ok: errors.length === 0, errors };
 }
+
+// ── Check #10: review_scope=final bidirectional coupling ──────────────────────
+/**
+ * Validates that CodeReviewer-subagent.agent.md references `review_scope=final`
+ * if and only if `code-reviewer.verdict.schema.json` review_scope enum contains "final".
+ * This is a bidirectional coupling check: if one side drifts the other becomes stale.
+ * @param {string} agentContent - Content of CodeReviewer-subagent.agent.md
+ * @param {object} schemaJson - Parsed code-reviewer.verdict.schema.json
+ * @returns {{ ok: boolean, agentReferencesFinal: boolean, schemaHasFinal: boolean, errors: string[] }}
+ */
+export function validateReviewScopeFinalCoupling(agentContent, schemaJson) {
+  const agentReferencesFinal =
+    /review_scope[=:]\s*"?final"?/.test(agentContent) ||
+    /review_scope=final/.test(agentContent);
+  const schemaHasFinal =
+    (schemaJson?.properties?.review_scope?.enum ?? []).includes('final');
+
+  const errors = [];
+  if (agentReferencesFinal && !schemaHasFinal) {
+    errors.push(
+      'CodeReviewer-subagent.agent.md references review_scope=final but code-reviewer.verdict.schema.json review_scope enum lacks "final"'
+    );
+  }
+  if (schemaHasFinal && !agentReferencesFinal) {
+    errors.push(
+      'code-reviewer.verdict.schema.json review_scope enum contains "final" but CodeReviewer-subagent.agent.md does not reference review_scope=final'
+    );
+  }
+  return { ok: errors.length === 0, agentReferencesFinal, schemaHasFinal, errors };
+}

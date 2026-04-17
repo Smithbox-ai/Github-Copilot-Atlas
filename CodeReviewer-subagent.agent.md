@@ -71,6 +71,46 @@ After completing verification gates:
 2. Emit the `scoring` object required by `schemas/code-reviewer.verdict.schema.json`.
 3. Base blocker overrides on confirmed entries in `validated_blocking_issues`; unvalidated issues do not block progression.
 
+### Final Scope (`review_scope=final`)
+
+Triggered when Orchestrator dispatches CodeReviewer at the Completion Gate with `review_scope: "final"`. This is a holistic pass over the entire plan's aggregate diff — not a repeat of per-phase review.
+
+#### 5.1 Prepare
+
+Orchestrator injects into the delegation prompt:
+- `changed_files[]` — aggregate of all files modified/created across every completed phase, normalized by Orchestrator from executor reports (`CoreImplementer → changes[].file`, `UIImplementer → ui_changes[].file`, `TechnicalWriter → docs_created[].path + docs_updated[].path`, `PlatformEngineer → changes[].file`).
+- `plan_phases_snapshot[]` — array of `{phase_id, files[]}` extracted from the Planner plan artifact, representing each phase's originally planned file set.
+
+Do NOT attempt to self-source these from `plans/artifacts/` using `read/readFile` — CodeReviewer does not hold that grant. Use only the injected context and `search` tools.
+
+#### 5.2 Execute Checks
+
+Run the following checks across all files in `changed_files[]`:
+
+1. **Coverage** — Every file in `changed_files[]` is accounted for in at least one `plan_phases_snapshot[].files` entry, OR flagged as out-of-scope.
+2. **Security** — Full `search/textSearch` audit across all changed files for secrets, hardcoded keys, SQL injection patterns, XSS vectors, PII exposure. Populate `security_checks` normally.
+3. **Quality** — Lint, type-safety, and test-coverage signals for all changed files.
+4. **Integration** — Verify that contracts between phases are satisfied: outputs referenced by downstream phases exist and match expected shapes.
+5. **Architecture** — Simplicity, anti-abstraction, integration-first principles across the aggregate change set.
+
+#### 5.3 Detect Out-of-Scope Changes
+
+Compare `changed_files[]` against the union of all `plan_phases_snapshot[].files`:
+- Any file in `changed_files[]` NOT present in any `plan_phases_snapshot[].files` → add to `out_of_scope_changes[]`.
+- Any file in any `plan_phases_snapshot[].files` NOT present in `changed_files[]` → mark as `status: "missing"` in `planned_vs_actual[]`.
+- Files present in both → mark as `status: "present"`.
+
+**Novelty filter (mandatory):** When `review_scope=final`, only report findings in `issues[]` and `validated_blocking_issues[]` that were NOT already surfaced and resolved in per-phase reviews recorded under `plans/artifacts/<task>/`. Duplicate findings that were already addressed must be omitted. New findings that cross phase boundaries or emerge only from the holistic view are the primary target.
+
+#### 5.4 Output
+
+Populate the standard verdict schema fields plus:
+- `review_scope: "final"`
+- `final_review_summary`: `{ files_reviewed, prd_compliance_score, security_audit_pass, quality_checks_pass, contract_verification_pass }`
+- `changed_files_analysis`: `{ planned_vs_actual[], out_of_scope_changes[] }`
+
+CodeReviewer **NEVER** owns fix cycles. If blocking findings exist, return them in `validated_blocking_issues[]` and set status to `NEEDS_REVISION`. Orchestrator will dispatch the original phase executor for remediation.
+
 ## Archive
 
 ### Context Compaction Policy

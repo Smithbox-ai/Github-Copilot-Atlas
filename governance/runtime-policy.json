@@ -95,5 +95,12 @@
     "cost_usd": null,
     "enable_reflection": false,
     "notes": "Orthogonal to retry_budgets. Reaching a budget cap classifies as 'escalate', not a failed attempt."
+  },
+
+  "final_review_gate": {
+    "enabled_by_default": false,
+    "auto_trigger_tiers": ["LARGE"],
+    "allow_user_trigger": true,
+    "max_fix_cycles": 1
   }
 }

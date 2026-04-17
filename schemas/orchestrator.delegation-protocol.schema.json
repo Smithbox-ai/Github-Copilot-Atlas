@@ -132,10 +132,24 @@
           "additionalProperties": false,
           "required": ["phase_id", "changed_files"],
           "properties": {
-            "phase_id": { "type": "integer", "minimum": 1 },
+            "phase_id": { "type": "integer", "minimum": 0 },
             "changed_files": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
             "review_depth": { "type": "string", "enum": ["full", "standard", "lightweight"] },
-            "security_sensitive": { "type": "boolean" }
+            "security_sensitive": { "type": "boolean" },
+            "review_scope": { "type": "string", "enum": ["phase", "wave", "final"] },
+            "plan_phases_snapshot": {
+              "type": "array",
+              "description": "Injected by Orchestrator for review_scope=final. Maps phase_id to its planned files for out-of-scope detection.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["phase_id", "files"],
+                "properties": {
+                  "phase_id": { "type": "integer", "minimum": 1 },
+                  "files": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
           }
         },
         "PlanAuditor-subagent": {

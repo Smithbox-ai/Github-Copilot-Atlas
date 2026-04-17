@@ -371,6 +371,95 @@ check(
 );
 
 // ──────────────────────────────────────────────
+// Final Review Gate invariants
+// ──────────────────────────────────────────────
+console.log('\n=== Orchestrator — Final Review Gate ===');
+
+check(
+  'Completion Gate: final_review_gate read from governance/runtime-policy.json',
+  /final_review_gate/i.test(orch)
+);
+
+{
+  const rp = JSON.parse(readFileSync(join(ROOT, 'governance', 'runtime-policy.json'), 'utf8'));
+  check(
+    'Governance: runtime-policy.json contains final_review_gate top-level key',
+    'final_review_gate' in rp
+  );
+}
+
+check(
+  'Completion Gate: optional final review activates for auto_trigger_tiers',
+  /auto_trigger_tiers/i.test(orch)
+);
+
+check(
+  'Completion Gate: changed_files normalization mapping documented (CoreImplementer, UIImplementer, TechnicalWriter, PlatformEngineer)',
+  /CoreImplementer.*changes.*file|changes.*file.*CoreImplementer/i.test(orch) &&
+  /UIImplementer.*ui_changes|ui_changes.*UIImplementer/i.test(orch) &&
+  /TechnicalWriter.*docs_created|docs_created.*TechnicalWriter/i.test(orch) &&
+  /PlatformEngineer.*changes.*file|changes.*file.*PlatformEngineer/i.test(orch)
+);
+
+check(
+  'Completion Gate: CodeReviewer dispatched with review_scope=final and phase_id=0 sentinel',
+  /review_scope.*final/i.test(orch) && /phase_id.*0.*sentinel|sentinel.*phase_id.*0/i.test(orch)
+);
+
+check(
+  'Completion Gate: fix executor resolved from plan phases (highest phase_id wins), not CodeReviewer',
+  /highest.*phase_id.*wins|highest phase_id/i.test(orch)
+);
+
+check(
+  'Completion Gate: CodeReviewer NEVER owns fix cycle (fix dispatched to original phase executor)',
+  /CodeReviewer.*NEVER.*own.*fix|never.*owns.*fix.*cycle/i.test(orch)
+);
+
+check(
+  'Completion Gate: empty validated_blocking_issues logs advisory, does not block',
+  /validated_blocking_issues.*empty.*log|empty.*validated_blocking_issues.*log/i.test(orch)
+);
+
+// Scenario fixture: final review gate trigger and routing
+const finalReviewScenario = JSON.parse(
+  readFileSync(join(ROOT, 'evals', 'scenarios', 'orchestrator-final-review-gate.json'), 'utf8')
+);
+check(
+  'Final review gate scenario: exists and has expected field',
+  finalReviewScenario.expected !== undefined &&
+  finalReviewScenario.expected.final_review_gate_triggered !== undefined
+);
+check(
+  'Final review gate scenario: LARGE tier auto-triggers gate',
+  finalReviewScenario.inputs?.some(i => i.input.complexity_tier === 'LARGE' && i.expected.final_review_gate_triggered === true) ?? false
+);
+check(
+  'Final review gate scenario: SMALL tier does not auto-trigger gate',
+  finalReviewScenario.inputs?.some(i => i.input.complexity_tier === 'SMALL' && i.expected.final_review_gate_triggered === false) ?? false
+);
+check(
+  'Final review gate scenario: enabled_by_default=true triggers gate regardless of tier',
+  finalReviewScenario.inputs?.some(i =>
+    i.input.final_review_gate_policy?.enabled_by_default === true &&
+    i.expected.final_review_gate_triggered === true
+  ) ?? false
+);
+check(
+  'Final review gate scenario: blocking findings route to original phase executor, not CodeReviewer',
+  finalReviewScenario.inputs?.some(i =>
+    i.expected.code_reviewer_owns_fix === false &&
+    i.expected.fix_executor_resolution === 'highest_phase_id_wins'
+  ) ?? false
+);
+check(
+  'Final review gate scenario: still-blocked findings escalate after max fix cycles',
+  finalReviewScenario.inputs?.some(i =>
+    i.expected.escalate_if_still_blocked_after_fix_cycles === true
+  ) ?? false
+);
+
+// ──────────────────────────────────────────────
 // Summary
 // ──────────────────────────────────────────────
 console.log(`\n${'═'.repeat(50)}`);

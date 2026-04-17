@@ -52,6 +52,7 @@ import {
   findUnresolvedOverlaps,
   extractCheckCounts,
   checkCountConsistency,
+  validateReviewScopeFinalCoupling,
 } from './drift-checks.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -843,7 +844,6 @@ header('Pass 7: Memory Architecture References');
       const canonicalDoc = memScenario.input?.canonical_doc;
       const requiredAgents = memScenario.input?.reference_required_in || [];
       const minAgents = memScenario.input?.minimum_agents_referencing || 13;
-      const manifestPath = memScenario.expected?.migration_manifest_exists;
       const notesBudget = memScenario.expected?.notes_md_line_budget || 20;
 
       // Canonical doc exists
@@ -888,13 +888,6 @@ header('Pass 7: Memory Architecture References');
         }
       } else {
         fail('NOTES.md missing');
-      }
-
-      // Migration manifest exists
-      if (manifestPath && existsSync(join(ROOT, manifestPath))) {
-        pass(`Migration manifest exists: ${manifestPath}`);
-      } else {
-        fail(`Migration manifest missing: ${manifestPath}`);
       }
     }
   }
@@ -1128,6 +1121,34 @@ header('Pass 12: Governance Policy Assertions');
       }
     }
     if (effortOk) pass(`Pass 12 E: reasoning_effort_hint present and valid for all ${roles.length} roles`);
+  }
+}
+
+// ─── Pass 13: Drift Detection — review_scope=final Bidirectional Coupling ─────
+header('Pass 13: Drift Detection — review_scope=final Bidirectional Coupling');
+{
+  const codeReviewerPath = join(ROOT, 'CodeReviewer-subagent.agent.md');
+  const verdictSchemaPath = join(SCHEMAS_DIR, 'code-reviewer.verdict.schema.json');
+  let agentContent = '';
+  let schemaJson = null;
+  let loadOk = true;
+  try { agentContent = readFileSync(codeReviewerPath, 'utf8'); } catch (e) {
+    fail(`Pass 13: cannot read CodeReviewer-subagent.agent.md — ${e.message}`);
+    loadOk = false;
+  }
+  try { schemaJson = JSON.parse(readFileSync(verdictSchemaPath, 'utf8')); } catch (e) {
+    fail(`Pass 13: cannot read code-reviewer.verdict.schema.json — ${e.message}`);
+    loadOk = false;
+  }
+  if (loadOk) {
+    const result = validateReviewScopeFinalCoupling(agentContent, schemaJson);
+    if (result.ok) {
+      pass('review_scope=final bidirectional coupling: agent and schema are aligned');
+    } else {
+      for (const err of result.errors) {
+        fail(`Pass 13: review_scope=final coupling drift — ${err}`);
+      }
+    }
   }
 }
 

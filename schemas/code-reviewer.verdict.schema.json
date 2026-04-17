@@ -78,6 +78,50 @@
         }
       }
     },
+    "review_scope": {
+      "type": "string",
+      "enum": ["phase", "wave", "final"],
+      "description": "Scope of this review invocation. 'phase' = single phase (default), 'wave' = wave-level, 'final' = holistic completion-gate review across all changed files."
+    },
+    "final_review_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Populated only when review_scope=final. Aggregate quality signals across all phases.",
+      "required": ["files_reviewed", "security_audit_pass", "quality_checks_pass", "contract_verification_pass"],
+      "properties": {
+        "files_reviewed": { "type": "integer", "minimum": 0 },
+        "prd_compliance_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "security_audit_pass": { "type": "boolean" },
+        "quality_checks_pass": { "type": "boolean" },
+        "contract_verification_pass": { "type": "boolean" }
+      }
+    },
+    "changed_files_analysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Populated only when review_scope=final. Compares aggregate changed files against planned phase files.",
+      "required": ["planned_vs_actual", "out_of_scope_changes"],
+      "properties": {
+        "planned_vs_actual": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["file", "status"],
+            "properties": {
+              "file": { "type": "string" },
+              "planned_phase_id": { "type": "integer" },
+              "status": { "type": "string", "enum": ["present", "missing", "extra"] }
+            }
+          }
+        },
+        "out_of_scope_changes": {
+          "type": "array",
+          "description": "Files modified that were not listed in any phase's planned files.",
+          "items": { "type": "string" }
+        }
+      }
+    },
     "scoring": {
       "type": "object",
       "additionalProperties": false,

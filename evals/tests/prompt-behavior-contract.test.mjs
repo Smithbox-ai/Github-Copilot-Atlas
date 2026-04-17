@@ -343,6 +343,27 @@ console.log('\n=== CodeReviewer — Behavioral Invariants ===');
     'CodeReviewer: blocks only on confirmed validated issues, not unvalidated findings',
     /validated.*block|confirmed.*block|block.*confirmed/i.test(src)
   );
+
+  check(
+    'CodeReviewer: final scope section present (review_scope=final)',
+    /review_scope.*final|final.*review_scope/i.test(src)
+  );
+
+  check(
+    'CodeReviewer: final scope novelty filter documented (skip already-surfaced findings)',
+    /novelty.filter|only report findings.*not already|not.*already.*surfaced/i.test(src)
+  );
+
+  check(
+    'CodeReviewer: out_of_scope_changes detection compares changed_files against plan_phases_snapshot',
+    /out_of_scope_changes/i.test(src) &&
+    /changed_files|plan_phases_snapshot/i.test(src)
+  );
+
+  check(
+    'CodeReviewer: CodeReviewer never owns fix cycles (final scope constraint)',
+    /never.*own.*fix.cycle|CodeReviewer.*NEVER.*own/i.test(src)
+  );
 }
 
 // ──────────────────────────────────────────────

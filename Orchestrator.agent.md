@@ -209,6 +209,14 @@ Reference: `docs/agent-engineering/TOOL-ROUTING.md`
 6. **Completion Gate**
    - Run cross-phase consistency review.
    - Verify all phase todo items are marked completed. If any are not, reconcile them before producing the completion summary.
+   - **Optional Final Review Gate:** Read `final_review_gate` from `governance/runtime-policy.json`. Activate if: (a) `enabled_by_default: true`, OR (b) the plan's `complexity_tier` is in `auto_trigger_tiers`, OR (c) the user requested a final review explicitly.
+     - If active:
+       1. **Normalize changed_files[]**: Aggregate all files modified/created across every completed phase from executor reports. Mapping: `CoreImplementer → changes[].file`, `UIImplementer → ui_changes[].file`, `TechnicalWriter → docs_created[].path + docs_updated[].path`, `PlatformEngineer → changes[].file`. Deduplicate.
+       2. **Build plan_phases_snapshot[]**: Extract `[{phase_id, files[]}]` from the Planner plan artifact. Omit `executor_agent` (not needed in snapshot; resolved from plan_path if fix-cycle is needed).
+       3. **Dispatch CodeReviewer-subagent** with `review_scope: "final"`, `phase_id: 0` (sentinel), `changed_files[]`, and `plan_phases_snapshot[]`.
+       4. **Route findings:**
+          - If `validated_blocking_issues` contains CRITICAL or MAJOR entries: resolve the fix executor for each issue by inspecting plan phases — highest phase_id wins: the phase with the highest `phase_id` whose `files[]` contains the affected file is the executor owner. Dispatch that executor with targeted fix scope. Re-run CodeReviewer with `review_scope: "final"` (max `max_fix_cycles` = 1 per `final_review_gate.max_fix_cycles`). If still blocked after the fix cycle → escalate to user via `WAITING_APPROVAL`. CodeReviewer **NEVER** owns the fix cycle.
+          - If `validated_blocking_issues` is empty: log a final-review advisory to `plans/artifacts/<task>/final_review.md` and continue.
    - Append a session-outcome entry to `plans/session-outcomes.md` using `plans/templates/session-outcome-template.md` BEFORE producing the final completion summary. This preserves the stop-rule contract (user sees the completion summary after telemetry is flushed, not before).
    - Produce completion summary.
 

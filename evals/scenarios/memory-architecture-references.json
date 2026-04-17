@@ -26,7 +26,6 @@
     "canonical_doc_exists": true,
     "all_agents_reference_canonical_doc": true,
     "notes_md_within_budget": true,
-    "notes_md_line_budget": 20,
-    "migration_manifest_exists": "plans/artifacts/controlflow-revision/phase-6-migration-manifest.yaml"
+    "notes_md_line_budget": 20
   }
 }

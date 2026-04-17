@@ -63,6 +63,14 @@ Before executing an action batch, the agent must:
    - `REPLAN`
    - `ABSTAIN`
 
+## Final Review Gate (Completion Gate)
+
+Optional Completion Gate sub-step for holistic cross-phase scope-drift detection.
+
+- Activated for LARGE tier (auto) or on user request.
+- Dispatches CodeReviewer with `review_scope="final"`.
+- Policy flag: `governance/runtime-policy.json#final_review_gate`.
+
 ## Output Evidence Rule
 Any success/failure claim must include evidence references:
 - file paths

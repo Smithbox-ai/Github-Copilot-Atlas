@@ -22,6 +22,9 @@ plans/templates/*
 
 # ── Agent internal state (session scratchpad) ─────────────
 # NOTES.md is a required project artifact tracked in the repository
+# AGENTS.md is a local-only working-notes helper for AI agents
+AGENTS.md
+Agent.md
 
 # ── Secrets & credentials ─────────────────────────────────
 .env
