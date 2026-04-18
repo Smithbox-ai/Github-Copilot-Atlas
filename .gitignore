@@ -21,7 +21,8 @@ plans/templates/*
 !plans/templates/verified-items-template.md
 
 # ── Tutorial docs ────────────────────────────────────────
-docs/tutorial-ru/
+# docs/tutorial-ru/
+# docs/tutorial-en/
 
 # ── Agent internal state (session scratchpad) ─────────────
 # NOTES.md is a required project artifact tracked in the repository

@@ -29,12 +29,12 @@ High-level grouping (see full `### Passes` table below for all intermediate sub-
 
 - **Pass 1:** Schema ingestion and compilation (Ajv strict mode).
 - **Pass 2:** `scenarios/` structural hydration and mapping (includes Pass 3a, 3b, 3c, 3d, 4b).
-- **Pass 3:** Cross-scenario structural regression testing (227 checks).
-- **Pass 7:** Behavioral regressions (`prompt-behavior-contract.test.mjs` — 78 checks).
-- **Pass 8:** Orchestration validation (`orchestration-handoff-contract.test.mjs` — 63 checks).
-- **Pass 9:** Drift detection (`drift-detection.test.mjs` — 42 checks).
+- **Pass 3:** Cross-scenario structural regression testing.
+- **Pass 7:** Behavioral regressions (`prompt-behavior-contract.test.mjs`).
+- **Pass 8:** Orchestration validation (`orchestration-handoff-contract.test.mjs`).
+- **Pass 9:** Drift detection (`drift-detection.test.mjs`).
 
-Test suite total: **410 total checks**.
+Run `npm test` to see the current total.
 
 1. Run each scenario against the corresponding agent contract.
 2. Validate output against the matching schema in `schemas/`.

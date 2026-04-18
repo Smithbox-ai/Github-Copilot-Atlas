@@ -245,40 +245,6 @@ export function findUnresolvedOverlaps(planFileMap, anchorMaps) {
   return unresolved;
 }
 
-// ── Check #5: Multi-doc check-count consistency ──────────────────────────────
-// Per-document extraction patterns. Each regex captures the advertised count.
-// Failure to match (pattern missing) is treated as drift.
-export const CHECK_COUNT_SOURCES = [
-  { file: 'README.md',                          regex: /(\d+)\s+checks\s+total:/ },
-  { file: 'evals/README.md',                    regex: /\*\*(\d+)\s+total\s+checks\*\*/ },
-  { file: '.github/copilot-instructions.md',    regex: /\((\d+)\s+checks,\s+offline\)/ },
-  { file: 'CONTRIBUTING.md',                    regex: /All\s+(\d+)\s+checks\s+must\s+pass/ },
-  { file: 'CHANGELOG.md',                       regex: /Eval\s+suite\s+\((\d+)\s+checks\)/ },
-  { file: 'SECURITY.md',                        regex: /\*\*(\d+)\s+offline\s+eval\s+checks\*\*/ },
-  { file: '.github/PULL_REQUEST_TEMPLATE.md',   regex: /all\s+(\d+)\+?\s+checks/i },
-];
-
-export function extractCheckCounts(rootDir, sources = CHECK_COUNT_SOURCES) {
-  const results = [];
-  for (const { file, regex } of sources) {
-    const p = join(rootDir, file);
-    if (!existsSync(p)) {
-      results.push({ file, count: null, error: 'file missing' });
-      continue;
-    }
-    const content = readFileSync(p, 'utf8');
-    const m = content.match(regex);
-    results.push({ file, count: m ? m[1] : null, error: m ? null : 'pattern not found' });
-  }
-  return results;
-}
-
-export function checkCountConsistency(results) {
-  const allPresent = results.every(r => r.count !== null);
-  const allEqual = allPresent && results.every(r => r.count === results[0].count);
-  return { allPresent, allEqual, counts: results.map(r => r.count) };
-}
-
 // ── Check #6: by_tier matrix shape ───────────────────────────────────────────
 const VALID_COMPLEXITY_TIERS = ['TRIVIAL', 'SMALL', 'MEDIUM', 'LARGE'];
 const VALID_COST_TIER_VALUES = ['low', 'medium', 'high'];

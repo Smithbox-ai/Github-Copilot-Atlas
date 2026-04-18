@@ -27,8 +27,6 @@ import {
   findUnresolvedOverlaps,
   parseYamlConsumers,
   hasSharedAnchorMapFlag,
-  extractCheckCounts,
-  checkCountConsistency,
   validateByTierShape,
   validateReviewScopeFinalCoupling,
 } from '../drift-checks.mjs';
@@ -323,65 +321,6 @@ console.log('\n=== Check #4 — Cross-plan file-overlap parser + anchor-map disc
   check(
     'negative: anchor-map missing one of the two consumers still flags overlap',
     unresolvedPartial.length === 1
-  );
-
-  try { rmSync(tmpRoot, { recursive: true, force: true }); } catch { /* best-effort */ }
-}
-
-// ──────────────────────────────────────────────
-// Check #5 — Multi-doc check-count consistency
-// ──────────────────────────────────────────────
-console.log('\n=== Check #5 — Multi-doc check-count consistency ===');
-{
-  // Synthesize an in-memory set of "sources" with drift and assert consistency check fails.
-  const tmpRoot = join(tmpdir(), `cf-count-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
-  mkdirSync(join(tmpRoot, '.github'), { recursive: true });
-  mkdirSync(join(tmpRoot, 'evals'), { recursive: true });
-
-  const writeAll = (value1, value2) => {
-    writeFileSync(join(tmpRoot, 'README.md'),
-      `Harness (${value1} checks total: 1 + 1 + 1)\n`, 'utf8');
-    writeFileSync(join(tmpRoot, 'evals', 'README.md'),
-      `Suite total: **${value2} total checks**\n`, 'utf8');
-    writeFileSync(join(tmpRoot, '.github', 'copilot-instructions.md'),
-      `cd evals && npm test   # full suite (${value1} checks, offline)\n`, 'utf8');
-    writeFileSync(join(tmpRoot, 'CONTRIBUTING.md'),
-      `All ${value1} checks must pass before merge.\n`, 'utf8');
-    writeFileSync(join(tmpRoot, 'CHANGELOG.md'),
-      `Eval suite (${value1} checks)\n`, 'utf8');
-    writeFileSync(join(tmpRoot, 'SECURITY.md'),
-      `**${value1} offline eval checks**\n`, 'utf8');
-    writeFileSync(join(tmpRoot, '.github', 'PULL_REQUEST_TEMPLATE.md'),
-      `all ${value1}+ checks\n`, 'utf8');
-  };
-
-  // Drift: README.md says 303, evals/README.md says 283 → consistency must fail.
-  writeAll('303', '283');
-  const driftResults = extractCheckCounts(tmpRoot);
-  const drift = checkCountConsistency(driftResults);
-  check(
-    'negative: drift across sources flagged as inconsistent',
-    drift.allPresent === true && drift.allEqual === false,
-    `counts=[${drift.counts.join(', ')}]`
-  );
-
-  // Aligned: all sources advertise 303 → consistency passes.
-  writeAll('303', '303');
-  const alignedResults = extractCheckCounts(tmpRoot);
-  const aligned = checkCountConsistency(alignedResults);
-  check(
-    'positive: aligned sources pass consistency check',
-    aligned.allPresent === true && aligned.allEqual === true && aligned.counts[0] === '303'
-  );
-
-  // Pattern-missing case: rewrite README.md without the expected phrase.
-  writeFileSync(join(tmpRoot, 'README.md'), 'No count advertised here.\n', 'utf8');
-  const missingResults = extractCheckCounts(tmpRoot);
-  const missing = checkCountConsistency(missingResults);
-  check(
-    'negative: missing count pattern treated as drift',
-    missing.allPresent === false &&
-    missingResults.find(r => r.file === 'README.md')?.count === null
   );
 
   try { rmSync(tmpRoot, { recursive: true, force: true }); } catch { /* best-effort */ }

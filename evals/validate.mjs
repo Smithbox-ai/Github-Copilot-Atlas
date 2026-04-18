@@ -50,8 +50,6 @@ import {
   buildPlanFileMap,
   findSharedAnchorMaps,
   findUnresolvedOverlaps,
-  extractCheckCounts,
-  checkCountConsistency,
   validateReviewScopeFinalCoupling,
 } from './drift-checks.mjs';
 
@@ -1017,23 +1015,6 @@ header('Pass 10: Drift Detection — Cross-Plan File-Overlap');
         fail(`Cross-plan overlap: ${unresolved.length - 10} additional unresolved pair(s) suppressed`);
       }
     }
-  }
-}
-
-// Check #5 — Multi-doc check-count consistency
-header('Pass 11: Drift Detection — Multi-Doc Check-Count Consistency');
-{
-  const results = extractCheckCounts(ROOT);
-  const { allPresent, allEqual, counts } = checkCountConsistency(results);
-  if (!allPresent) {
-    for (const r of results) {
-      if (r.count === null) fail(`Check-count missing in ${r.file}: ${r.error}`);
-    }
-  } else if (!allEqual) {
-    const summary = results.map(r => `${r.file}=${r.count}`).join(', ');
-    fail(`Check-count drift across sources: ${summary}`);
-  } else {
-    pass(`Check-count consistency: all ${counts.length} sources advertise "${counts[0]}"`);
   }
 }
 
