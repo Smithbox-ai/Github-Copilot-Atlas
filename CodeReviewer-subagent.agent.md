@@ -40,6 +40,8 @@ Before setting `APPROVED`, complete these local pre-approval gates:
 
 If a mandatory gate fails, status cannot be `APPROVED`.
 
+`cd evals && npm test` is the per-phase canonical verification gate before reporting `completed`.
+
 ### Safety and Approval Signals
 Flag and escalate when changed scope includes:
 - destructive operations
@@ -133,6 +135,7 @@ Agent-specific additions: _none_
 
 ## Resources
 
+- `skills/patterns/repo-memory-hygiene.md` — load before any `/memories/repo/` write.
 - `skills/patterns/security-review-discipline.md`
 - `docs/agent-engineering/PART-SPEC.md`
 - `docs/agent-engineering/RELIABILITY-GATES.md`

@@ -45,6 +45,8 @@ Forget everything except:
 **Phase B — Pre-Execution Checklist (per task)**
 For each of the first 3 tasks, evaluate these 8 items:
 
+`cd evals && npm test` is the per-phase canonical verification gate before reporting `completed`.
+
 | # | Check | Question |
 |---|---|---|
 | 1 | what_clear | Is WHAT to do unambiguously described? |

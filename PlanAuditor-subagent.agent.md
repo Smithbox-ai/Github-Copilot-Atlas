@@ -138,6 +138,7 @@ Agent-specific additions:
 
 ## Resources
 
+- `skills/patterns/repo-memory-hygiene.md` — load before any `/memories/repo/` write.
 - `docs/agent-engineering/PART-SPEC.md`
 - `docs/agent-engineering/RELIABILITY-GATES.md`
 - `docs/agent-engineering/SCORING-SPEC.md`

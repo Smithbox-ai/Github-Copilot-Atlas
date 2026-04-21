@@ -88,7 +88,16 @@
             "items": { "type": "integer", "minimum": 1 },
             "minItems": 1
           },
-          "suggested_fix": { "type": "string" }
+          "suggested_fix": { "type": "string" },
+          "regression_iteration": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Iteration index from which this finding regressed. Set when a previously-verified item recurs in a later plan iteration."
+          },
+          "regression_finding_id": {
+            "type": "string",
+            "description": "Finding ID from a prior audit iteration this finding marks as regressed (e.g. 'PA-MAJOR-1')."
+          }
         }
       }
     },
@@ -196,8 +205,8 @@
     },
     "failure_classification": {
       "type": "string",
-      "enum": ["fixable", "needs_replan", "escalate"],
-      "description": "Required when status is NEEDS_REVISION or REJECTED. Note: 'transient' is not applicable for plan audits. fixable: addressable within existing phase structure. needs_replan: fundamental flaw requiring Planner redesign. escalate: destructive or ambiguous risk requiring human decision."
+      "enum": ["fixable", "needs_replan", "escalate", "model_unavailable"],
+      "description": "Required when status is NEEDS_REVISION or REJECTED. Note: 'transient' is excluded — read-only reviewers do not have a flake retry semantic. 'model_unavailable' is admitted because it substitutes the model (not the prompt) and therefore does not violate the transient-exclusion rationale. fixable: addressable within existing phase structure. needs_replan: fundamental flaw requiring Planner redesign. escalate: destructive or ambiguous risk requiring human decision. model_unavailable: the model assigned to this audit was not reachable; retry with an available model."
     }
   },
   "if": {

@@ -1,0 +1,44 @@
+{
+  "scenario_id": "auditor-regression-lineage",
+  "agent": "PlanAuditor-subagent",
+  "title": "Auditor finding regression lineage fields",
+  "description": "Validates that plan-auditor findings can carry regression_iteration and regression_finding_id to mark same-finding regressions across plan iterations, and that findings without these fields remain valid.",
+  "category": "contract",
+  "inputs": [
+    {
+      "label": "finding-with-regression-fields",
+      "description": "Positive case: an auditor finding on iter-2 marks a recurrence of PA-MAJOR-1 from iter-1 using regression_iteration and regression_finding_id.",
+      "input": {
+        "plan_path": "plans/sample-iter2-plan.md",
+        "context": "PlanAuditor is reviewing iter-2. A finding that was VERIFIED in iter-1 has regressed. The finding object includes regression_iteration: 2 and regression_finding_id: 'PA-MAJOR-1'."
+      },
+      "expected": {
+        "schema": "schemas/plan-auditor.plan-audit.schema.json",
+        "regression_iteration_value": 2,
+        "regression_finding_id_value": "PA-MAJOR-1",
+        "finding_schema_valid": true,
+        "must_not": "schema reject a finding that carries optional regression lineage fields"
+      }
+    },
+    {
+      "label": "finding-without-regression-fields",
+      "description": "Regression guard: a standard iter-1 finding without regression lineage fields must still validate — both fields are optional.",
+      "input": {
+        "plan_path": "plans/sample-iter1-plan.md",
+        "context": "PlanAuditor reviewing iter-1 plan. No prior iteration context. Finding has no regression fields."
+      },
+      "expected": {
+        "schema": "schemas/plan-auditor.plan-audit.schema.json",
+        "regression_fields_absent": true,
+        "schema_valid": true,
+        "must_not": "schema reject a finding that omits the optional regression_iteration and regression_finding_id fields"
+      }
+    }
+  ],
+  "assertions": [
+    "regression_iteration is optional: iter-1 findings without it remain schema-valid.",
+    "regression_finding_id is optional: iter-1 findings without it remain schema-valid.",
+    "When both regression fields are present they follow their type constraints: integer >= 1 and string.",
+    "additionalProperties: false on finding objects is honored — regression fields are explicitly declared."
+  ]
+}

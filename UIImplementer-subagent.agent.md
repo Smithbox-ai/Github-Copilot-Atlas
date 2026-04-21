@@ -52,6 +52,8 @@ Use the shared sequence from `docs/agent-engineering/MIGRATION-CORE-FIRST.md`; f
 5. Run build verification.
 6. Verify accessibility and responsive criteria in scope.
 
+`cd evals && npm test` is the per-phase canonical verification gate before reporting `completed`.
+
 ## Archive
 
 ### Context Compaction Policy

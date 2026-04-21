@@ -58,6 +58,8 @@ Agent-specific additions: _none_
 5. Verify documentation-code parity — ensure all documented behavior matches code.
 6. Emit structured text execution report.
 
+`cd evals && npm test` is the per-phase canonical verification gate before reporting `completed`.
+
 ### Diagram Standards
 - Use **Mermaid** format exclusively (renders natively in GitHub and VS Code).
 - Diagram types: `flowchart`, `sequenceDiagram`, `classDiagram`, `erDiagram`, `stateDiagram-v2`.

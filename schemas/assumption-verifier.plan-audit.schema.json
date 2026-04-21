@@ -111,6 +111,15 @@
             "type": "string",
             "enum": ["VERIFIED", "UNVERIFIED", "MIRAGE"],
             "description": "VERIFIED: claim confirmed true. UNVERIFIED: could not confirm. MIRAGE: claim confirmed false."
+          },
+          "regression_iteration": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Iteration index from which this mirage regressed. Set when a previously-verified mirage item recurs in a later plan iteration."
+          },
+          "regression_finding_id": {
+            "type": "string",
+            "description": "Finding ID from a prior mirage scan iteration this finding marks as regressed."
           }
         }
       }
@@ -150,8 +159,8 @@
     },
     "failure_classification": {
       "type": "string",
-      "enum": ["fixable", "needs_replan", "escalate"],
-      "description": "Required when mirages with BLOCKING severity are found."
+      "enum": ["fixable", "needs_replan", "escalate", "model_unavailable"],
+      "description": "Required when mirages with BLOCKING severity are found or when the model was unavailable. Note: 'transient' is excluded — read-only reviewers do not have a flake retry semantic. 'model_unavailable' is admitted because it substitutes the model (not the prompt) and therefore does not violate the transient-exclusion rationale. model_unavailable: the model assigned to this verifier was not reachable; retry with an available model."
     }
   }
 }

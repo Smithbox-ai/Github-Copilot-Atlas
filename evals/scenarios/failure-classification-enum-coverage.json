@@ -1,0 +1,66 @@
+{
+  "scenario_id": "failure-classification-enum-coverage",
+  "target_agent": "Orchestrator",
+  "goal": "All executor/reviewer schemas accept model_unavailable; auditor schemas accept model_unavailable but exclude transient",
+  "description": "Validates that failure_classification enum is consistent across all schema families. Standard executor and reviewer schemas accept [transient, fixable, needs_replan, escalate, model_unavailable]. Auditor schemas accept [fixable, needs_replan, escalate, model_unavailable] but MUST reject transient (read-only reviewers have no flake-retry semantic).",
+  "schema_families": {
+    "standard_enum": ["transient", "fixable", "needs_replan", "escalate", "model_unavailable"],
+    "auditor_enum": ["fixable", "needs_replan", "escalate", "model_unavailable"],
+    "auditor_excluded": ["transient"]
+  },
+  "coverage": {
+    "standard_schemas": [
+      "schemas/core-implementer.execution-report.schema.json",
+      "schemas/ui-implementer.execution-report.schema.json",
+      "schemas/platform-engineer.execution-report.schema.json",
+      "schemas/technical-writer.execution-report.schema.json",
+      "schemas/executability-verifier.execution-report.schema.json",
+      "schemas/browser-tester.execution-report.schema.json",
+      "schemas/code-reviewer.verdict.schema.json"
+    ],
+    "auditor_schemas": [
+      "schemas/plan-auditor.plan-audit.schema.json",
+      "schemas/assumption-verifier.plan-audit.schema.json"
+    ],
+    "planner_schema": "schemas/planner.plan.schema.json"
+  },
+  "positive_cases": [
+    {
+      "label": "standard-schema-model-unavailable",
+      "description": "Any executor schema with failure_classification=model_unavailable must be schema-valid",
+      "sample_value": "model_unavailable",
+      "applies_to": "standard_schemas",
+      "expected": "VALID"
+    },
+    {
+      "label": "auditor-schema-model-unavailable",
+      "description": "Auditor schemas with failure_classification=model_unavailable must be schema-valid (admitted despite transient exclusion because model_unavailable substitutes the model, not the prompt)",
+      "sample_value": "model_unavailable",
+      "applies_to": "auditor_schemas",
+      "expected": "VALID"
+    },
+    {
+      "label": "standard-schema-transient",
+      "description": "Standard executor schemas must continue to accept transient",
+      "sample_value": "transient",
+      "applies_to": "standard_schemas",
+      "expected": "VALID"
+    }
+  ],
+  "negative_cases": [
+    {
+      "label": "auditor-schema-transient-rejected",
+      "description": "NEGATIVE CONTROL: auditor schemas must reject transient — read-only reviewers have no flake-retry semantic",
+      "sample_value": "transient",
+      "applies_to": "auditor_schemas",
+      "expected": "INVALID",
+      "rationale": "transient is structurally excluded from plan-auditor and assumption-verifier schemas. model_unavailable is admitted as a separate class that substitutes the model (not the prompt) and does not carry the flake-retry implication."
+    }
+  ],
+  "expected": {
+    "routing_table_followed": true,
+    "all_schemas_accept_model_unavailable": true,
+    "auditor_schemas_exclude_transient": true,
+    "planner_failure_scenarios_accept_model_unavailable": true
+  }
+}

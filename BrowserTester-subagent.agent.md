@@ -73,6 +73,8 @@ For each test scenario, follow this execution order:
 5. Close all browser sessions (cleanup mandate).
 6. Emit structured text execution report.
 
+`cd evals && npm test` is the per-phase canonical verification gate before reporting `completed`.
+
 ### Accessibility Audit Standards
 - Check WCAG 2.2 AA compliance for all tested elements.
 - Verify ARIA roles and labels are present.

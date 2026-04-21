@@ -1,0 +1,27 @@
+{
+  "id": "repo-memory-dedup-negative",
+  "target_agent": "Orchestrator",
+  "category": "structural",
+  "description": "Negative-control fixture for repo-memory dedup heuristic: a legitimate refinement pair (same subject, materially different fact) derived from the 'ControlFlow eval harness' cluster's early-vs-late evolution must NOT be flagged.",
+  "goal": "Dedup heuristic does not flag a legitimate refinement pair with Jaccard < 0.85",
+  "input": {
+    "heuristic": "token-jaccard",
+    "field": "subject||fact",
+    "normalize": "lowercase, strip punctuation, collapse whitespace, tokenize on whitespace",
+    "threshold": 0.85,
+    "existing_entry": {
+      "subject": "ControlFlow eval harness",
+      "fact": "Repository's canonical verification is `cd evals && npm test` (offline eval harness) and CI runs this command."
+    },
+    "candidate_entry": {
+      "subject": "ControlFlow eval harness",
+      "fact": "Canonical repository validation runs offline via `cd evals && npm test`, which executes `validate.mjs` plus prompt-behavior and orchestration-handoff regression tests without invoking live agents."
+    }
+  },
+  "expected": {
+    "flag": false,
+    "approximate_jaccard": 0.33,
+    "rationale": "The existing entry mentions only the command itself; the candidate adds material detail (validate.mjs, prompt-behavior regression tests, orchestration-handoff tests, offline-only assertion). Normalized token overlap is ~33%, well below the 0.85 threshold. This is a legitimate refinement and should not be blocked.",
+    "operator_action_required": false
+  }
+}

@@ -132,7 +132,7 @@
     "next_steps": { "type": "array", "items": { "type": "string" } },
     "failure_classification": {
       "type": "string",
-      "enum": ["transient", "fixable", "needs_replan", "escalate"],
+      "enum": ["transient", "fixable", "needs_replan", "escalate", "model_unavailable"],
       "description": "Required when status is FAILED or NEEDS_INPUT. Classifies the failure type for Orchestrator routing."
     },
     "clarification_request": {

@@ -53,6 +53,8 @@ Use the shared sequence from `docs/agent-engineering/MIGRATION-CORE-FIRST.md`; f
 5. Verify resource usage and clean up orphaned resources.
 6. If an operation fails, execute the rollback protocol.
 
+`cd evals && npm test` is the per-phase canonical verification gate before reporting `completed`.
+
 ### Approval Gates (Mandatory)
 | Condition | Action |
 |---|---|

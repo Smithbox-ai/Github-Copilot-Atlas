@@ -52,7 +52,7 @@
     "iteration_index": {
       "type": "integer",
       "minimum": 0,
-      "description": "Current iteration index in plan-review loop."
+      "description": "Current iteration index in plan-review loop. Incremented on REPLAN-with-new-plan-path events; the revised plan should carry revision_of referencing the prior plan path."
     },
     "max_iterations": {
       "type": "integer",

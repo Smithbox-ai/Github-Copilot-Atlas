@@ -48,6 +48,39 @@ Ask: "Will this fact be actionable for a future task unrelated to the current pl
 
 A `/memories/repo/` entry is only valid with all five fields: `subject`, `fact`, `citations` (concrete file + line references), `reason` (why this is worth storing cross-plan), `category`. An entry missing any field may cause downstream readers to misinterpret it. **DO NOT WRITE** until all five fields are complete.
 
+### Dedup Heuristic (Pinned)
+
+A deterministic similarity check to run at Step 3 above. All steps are mandatory.
+
+**Algorithm:**
+
+1. **Normalize** each text: lowercase → strip punctuation → collapse whitespace.
+2. **Build comparison input**: concatenate `subject || fact` (separator: a single literal pipe `|`), then normalize the combined string.
+3. **Tokenize** on whitespace.
+4. **Compute token Jaccard similarity**: `|A ∩ B| / |A ∪ B|` where A and B are the token sets of the existing and candidate entries.
+5. **Threshold**: Jaccard ≥ 0.85 → **FLAG** (do not auto-delete or auto-skip).
+
+**On FLAG — operator action required:**
+
+- Pause the `/memories/repo/ create` call.
+- Emit a readable diff of (existing fact ↔ candidate fact).
+- Operator chooses one of:
+  - `skip` — discard candidate; existing entry is sufficient.
+  - `merge into existing` — update citation/reason fields on the existing entry only.
+  - `create as new with rationale` — proceed only if candidate adds material new information; document the rationale in the `reason` field.
+
+**Worked example (positive — flag expected):**
+
+- Existing: `"ControlFlow eval harness|Canonical repository validation runs offline via cd evals npm test which executes validatemjs plus promptbehavior and orchestrationhandoff regression tests without invoking live agents"`
+- Candidate: `"ControlFlow eval harness|Repository validation runs offline via cd evals npm test which executes validatemjs plus the promptbehavior and orchestrationhandoff regression tests without live agents"`
+- Normalized Jaccard ≈ 0.89 → **FLAG**.
+
+**Worked example (negative — no flag):**
+
+- Existing: `"ControlFlow eval harness|Repositorys canonical verification is cd evals npm test offline eval harness and ci runs this command"`
+- Candidate: `"ControlFlow eval harness|Canonical repository validation runs offline via cd evals npm test which executes validatemjs plus promptbehavior and orchestrationhandoff regression tests without invoking live agents"`
+- Normalized Jaccard ≈ 0.33 → **no flag** (legitimate refinement — candidate adds material detail not present in the existing entry).
+
 ---
 
 ## Checklist B — NOTES.md Prune Routine

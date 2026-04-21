@@ -197,6 +197,7 @@ Reference: `docs/agent-engineering/TOOL-ROUTING.md`
      6. **Convergence Detection:** If `iteration_index ≥ 3` and score improvement over previous 2 iterations < 5% → stagnation. Present findings summary to user with `WAITING_APPROVAL`.
      7. If `iteration_index > max_iterations` → present best plan version and unresolved issues to user.
    - **Regression Tracking:** At `iteration_index > 1`, load verified items from previous iteration. Pass to PlanAuditor as context. Any previously verified item that now fails → automatic BLOCKING regression issue.
+   - **Lineage Contract:** When incrementing `iteration_index` and routing a REPLAN-with-new-plan-path, the new plan SHOULD carry `revision_of` set to the prior plan path. Auditor outputs that mark a same-finding recurrence SHOULD carry `regression_iteration` + `regression_finding_id` on the relevant finding object to enable per-finding regression tracing across iterations.
    - If trigger conditions are not met: skip directly to Implementation Loop.
 
 5. **Implementation Loop (Per Phase)**

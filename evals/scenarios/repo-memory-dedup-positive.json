@@ -1,0 +1,27 @@
+{
+  "id": "repo-memory-dedup-positive",
+  "target_agent": "Orchestrator",
+  "category": "structural",
+  "description": "Positive fixture for repo-memory dedup heuristic: a near-duplicate pair from the six-entry 'ControlFlow eval harness' cluster must be flagged by the pinned Jaccard heuristic.",
+  "goal": "Dedup heuristic flags near-identical repo-memory entries with Jaccard >= 0.85",
+  "input": {
+    "heuristic": "token-jaccard",
+    "field": "subject||fact",
+    "normalize": "lowercase, strip punctuation, collapse whitespace, tokenize on whitespace",
+    "threshold": 0.85,
+    "existing_entry": {
+      "subject": "ControlFlow eval harness",
+      "fact": "Canonical repository validation runs offline via `cd evals && npm test`, which executes `validate.mjs` plus prompt-behavior and orchestration-handoff regression tests without invoking live agents."
+    },
+    "candidate_entry": {
+      "subject": "ControlFlow eval harness",
+      "fact": "Repository validation runs offline via `cd evals && npm test`, which executes `validate.mjs` plus the prompt-behavior and orchestration-handoff regression tests without live agents."
+    }
+  },
+  "expected": {
+    "flag": true,
+    "approximate_jaccard": 0.89,
+    "rationale": "Both entries describe the same fact (cd evals && npm test runs validate.mjs plus behavioral regression tests offline). Normalized token overlap is ~89%, above the 0.85 threshold. Operator must choose skip, merge, or create-with-rationale before proceeding.",
+    "operator_action_required": true
+  }
+}

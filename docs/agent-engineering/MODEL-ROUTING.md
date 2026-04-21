@@ -37,7 +37,17 @@ The 10 roles are:
 | `fast-readonly` | CodeMapper |
 | `research-capable` | Researcher |
 
-## How agents opt in
+### review-readonly: Sonnet demotion trade-off
+
+`AssumptionVerifier` was previously pinned to `Claude Opus 4.7 (copilot)` in its `model:` frontmatter while its declared `model_role` was `review-readonly`, whose `primary` in `governance/model-routing.json` is `Claude Sonnet 4.6 (copilot)`. The frontmatter has been corrected to match the role primary. Three trade-offs are noted:
+
+**(a) Reduced mirage-detection depth.** The 17-pattern + 5-dimension analysis performed by AssumptionVerifier benefits from Opus-class reasoning capacity. Demotion to Sonnet may reduce detection depth for subtle assumption-fact confusions, particularly in deeply nested or context-dependent mirage patterns.
+
+**(b) Role-band cost coupling with ExecutabilityVerifier.** Both AssumptionVerifier and ExecutabilityVerifier consume `review-readonly`. A role-level promotion to Opus would elevate both agents simultaneously, coupling cost across two verification subagents regardless of per-task need.
+
+**(c) Demotion is the only role-coherent option.** The role-coherent resolution is to align the `model:` field with the role's declared `primary`. The alternative — silently elevating the `review-readonly` role itself to Opus — would bypass the established tiering rationale and implicitly affect ExecutabilityVerifier without a deliberate role redesign.
+
+
 
 During the rollout window, agents add a `model_role:` line to their frontmatter **alongside** the existing `model:` line:
 

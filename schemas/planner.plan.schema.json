@@ -100,7 +100,7 @@
                 "scenario": { "type": "string" },
                 "classification": {
                   "type": "string",
-                  "enum": ["transient", "fixable", "needs_replan", "escalate"]
+                  "enum": ["transient", "fixable", "needs_replan", "escalate", "model_unavailable"]
                 },
                 "mitigation": { "type": "string" }
               }
@@ -263,6 +263,10 @@
       "maximum": 5,
       "default": 5,
       "description": "Maximum plan-review iterations before escalation to user."
+    },
+    "revision_of": {
+      "type": "string",
+      "description": "Path of the prior plan artifact this plan supersedes. Set on REPLAN-with-new-plan-path events so the new plan is traceable to its predecessor. Optional — iter-1 plans omit this field."
     }
   }
 }
