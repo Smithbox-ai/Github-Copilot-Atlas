@@ -9,6 +9,8 @@ description: "Use when asked to review code, a diff, or a completed phase, espec
 
 Review changes the ControlFlow way: prioritize correctness, regression risk, and evidence over style. This skill adapts the repo's review discipline into a Codex-friendly checklist and reporting shape.
 
+Use this for code and implementation review. For pre-execution plan review, use `controlflow-plan-audit` or `controlflow-assumption-verifier`.
+
 ## Workflow
 
 1. Start with correctness, regressions, security, data integrity, performance, and contract drift. Ignore nits until the behavioral risks are understood.

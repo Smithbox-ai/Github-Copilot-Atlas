@@ -1,0 +1,92 @@
+param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+
+    [Parameter(Mandatory = $true)]
+    [string]$PlanPath,
+
+    [switch]$RequirePlanAudit,
+    [switch]$RequireAssumptionVerifier,
+    [switch]$RequireExecutabilityVerifier
+)
+
+$ErrorActionPreference = "Stop"
+
+function Read-Text([string]$Path) {
+    if (-not (Test-Path $Path)) {
+        throw "Missing file: $Path"
+    }
+    return Get-Content $Path -Raw
+}
+
+function Assert-Contains([string]$Content, [string]$Needle, [string]$Label) {
+    if ($Content -notmatch [regex]::Escape($Needle)) {
+        throw "Missing required section '$Label'"
+    }
+}
+
+$repoRootResolved = (Resolve-Path $RepoRoot).Path
+$planResolved = if ([System.IO.Path]::IsPathRooted($PlanPath)) { $PlanPath } else { Join-Path $repoRootResolved $PlanPath }
+$planContent = Read-Text $planResolved
+
+$planSections = @(
+    "# Plan:",
+    "**Status:**",
+    "**Agent:**",
+    "**Schema Version:**",
+    "**Complexity Tier:**",
+    "**Confidence:**",
+    "## Context & Analysis",
+    "## Design Decisions",
+    "## Implementation Phases",
+    "## Inter-Phase Contracts",
+    "## Open Questions",
+    "## Risks",
+    "## Semantic Risk Review",
+    "## Success Criteria",
+    "## Handoff",
+    "## Notes for Orchestration"
+)
+
+foreach ($section in $planSections) {
+    Assert-Contains $planContent $section $section
+}
+
+$planLeaf = Split-Path $planResolved -Leaf
+if ($planLeaf -notmatch '^(?<slug>.+)-plan\.md$') {
+    throw "Plan filename must end with '-plan.md': $planLeaf"
+}
+$taskSlug = $Matches['slug']
+$artifactRoot = Join-Path $repoRootResolved "plans/artifacts/$taskSlug"
+
+$artifactChecks = @()
+if ($RequirePlanAudit) {
+    $artifactChecks += [pscustomobject]@{
+        Path = Join-Path $artifactRoot "plan-audit.md"
+        Sections = @("# Plan Audit Report", "**Status:**", "## Findings", "## Risk Summary", "## Recommendation", "## Evidence")
+    }
+}
+if ($RequireAssumptionVerifier) {
+    $artifactChecks += [pscustomobject]@{
+        Path = Join-Path $artifactRoot "assumption-verifier.md"
+        Sections = @("# Assumption Verifier Report", "**Status:**", "## Mirages Found", "## Dimensional Scores", "## Summary", "## Evidence")
+    }
+}
+if ($RequireExecutabilityVerifier) {
+    $artifactChecks += [pscustomobject]@{
+        Path = Join-Path $artifactRoot "executability-verifier.md"
+        Sections = @("# Executability Verifier Report", "**Status:**", "## Tasks Simulated", "## Per-Task Checklist", "## Walkthrough Summary", "## Recommendation")
+    }
+}
+
+foreach ($artifact in $artifactChecks) {
+    $artifactContent = Read-Text $artifact.Path
+    foreach ($section in $artifact.Sections) {
+        Assert-Contains $artifactContent $section $section
+    }
+}
+
+Write-Output "VALID plan: $planResolved"
+foreach ($artifact in $artifactChecks) {
+    Write-Output "VALID artifact: $($artifact.Path)"
+}

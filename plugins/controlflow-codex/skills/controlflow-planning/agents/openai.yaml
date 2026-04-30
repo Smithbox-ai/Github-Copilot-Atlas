@@ -1,4 +1,4 @@
 interface:
   display_name: "ControlFlow Planning"
-  short_description: "Turn large requests into phased, testable plans"
-  default_prompt: "Use $controlflow-planning to draft a phased implementation plan for this repository change."
+  short_description: "Write strict ControlFlow-style plan artifacts in plans/"
+  default_prompt: "Use $controlflow-planning to write a strict plan artifact in plans/ for this repository change."
