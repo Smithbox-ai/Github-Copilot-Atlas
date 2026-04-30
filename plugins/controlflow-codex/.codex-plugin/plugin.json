@@ -1,6 +1,6 @@
 {
   "name": "controlflow-codex",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Strict workflow, plan, audit, executability, orchestration, review, and memory workflows adapted from ControlFlow for Codex.",
   "author": {
     "name": "Local Workspace",

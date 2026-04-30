@@ -22,6 +22,7 @@ A multi-agent orchestration system for VS Code Copilot. ControlFlow coordinates 
 - [Project Structure](#project-structure)
 - [Documentation](#documentation)
 - [Installation](#installation)
+- [ControlFlow for Codex (Plugin)](#controlflow-for-codex-plugin)
 - [License](#license)
 
 ---
@@ -250,6 +251,8 @@ See [`evals/README.md`](evals/README.md) for pass descriptions and how to add sc
 ├── evals/                         # Offline validation suite
 │   └── scenarios/                 # Eval scenario fixtures
 ├── plans/                         # Plan artifacts and templates
+├── plugins/
+│   └── controlflow-codex/         # Codex CLI plugin (9 portable skills)
 └── NOTES.md                       # Active objective state (repo-persistent)
 ```
 
@@ -293,6 +296,91 @@ Without `.github/copilot-instructions.md` agents will not have access to shared 
 ### Adding Custom Agents
 
 Create a new `.agent.md` file following the P.A.R.T structure (Prompt → Archive → Resources → Tools). See [CONTRIBUTING.md](CONTRIBUTING.md) for the full 4-step process.
+
+---
+
+## ControlFlow for Codex (Plugin)
+
+A portable adaptation of ControlFlow for [OpenAI Codex CLI](https://github.com/openai/codex), located in [`plugins/controlflow-codex/`](plugins/controlflow-codex/).
+
+The plugin brings the core ControlFlow disciplines — phased planning, pre-execution plan review, assumption verification, orchestration, evidence-backed code review, and memory hygiene — into Codex without depending on VS Code-specific tool contracts, fixed agent rosters, or `@Agent` syntax.
+
+### Included Skills
+
+| Skill | Analogous ControlFlow Role |
+|-------|---------------------------|
+| `$controlflow-router` | Entry-point dispatcher |
+| `$controlflow-strict-workflow` | Orchestrator (full workflow entry point) |
+| `$controlflow-planning` | Planner — writes `plans/<task-slug>-plan.md` |
+| `$controlflow-plan-audit` | PlanAuditor |
+| `$controlflow-assumption-verifier` | AssumptionVerifier |
+| `$controlflow-executability-verifier` | ExecutabilityVerifier |
+| `$controlflow-orchestration` | Orchestrator (execution-only path) |
+| `$controlflow-review` | CodeReviewer |
+| `$controlflow-memory-hygiene` | Memory hygiene |
+
+Complexity routing matches the main project: `TRIVIAL` → optional; `SMALL` → plan-audit; `MEDIUM` → plan-audit + assumption-verifier; `LARGE` → full pipeline.
+
+### Installation
+
+From the repository root:
+
+```powershell
+# Windows — installs to ~/plugins/controlflow-codex/ and registers in ~/.agents/plugins/marketplace.json
+powershell -ExecutionPolicy Bypass -File plugins/controlflow-codex/scripts/install-home-local.ps1
+
+# Re-install (replace existing)
+powershell -ExecutionPolicy Bypass -File plugins/controlflow-codex/scripts/install-home-local.ps1 -Force
+```
+
+After installation, the plugin is available in Codex as `$controlflow-*` skills.
+
+### Usage
+
+Recommended entry point for any non-trivial task:
+
+```
+Use $controlflow-strict-workflow to handle this repository task from plan through execution.
+```
+
+For individual steps:
+
+```
+# Write a strict plan artifact
+Use $controlflow-planning to write a plan in plans/ for this task.
+
+# Audit an existing plan before coding
+Use $controlflow-plan-audit to review plans/my-task-plan.md.
+
+# Check for hidden assumptions
+Use $controlflow-assumption-verifier to find mirages in plans/my-task-plan.md.
+
+# Execute an approved plan in phases
+Use $controlflow-orchestration to execute plans/my-task-plan.md.
+
+# Review completed implementation
+Use $controlflow-review to review the completed implementation.
+```
+
+See [`plugins/controlflow-codex/USAGE.md`](plugins/controlflow-codex/USAGE.md) for the full prompt catalog and [`plugins/controlflow-codex/README.md`](plugins/controlflow-codex/README.md) for detailed documentation.
+
+### Validating Plan Artifacts
+
+```powershell
+powershell -ExecutionPolicy Bypass -File plugins/controlflow-codex/scripts/validate-strict-artifacts.ps1 `
+  -RepoRoot . `
+  -PlanPath plans/my-task-plan.md `
+  -RequirePlanAudit `
+  -RequireAssumptionVerifier
+```
+
+### Intentional Differences from the VS Code Version
+
+- No `@Agent` syntax or fixed subagent roster.
+- No `agent/runSubagent` dispatch or `governance/model-routing.json` — model selection is Codex's responsibility.
+- No VS Code-specific tool surfaces (`vscode/askQuestions`, `read/problems`, etc.).
+- Plan artifact structure (`plans/<task-slug>-plan.md`) and review artifact paths (`plans/artifacts/<task-slug>/`) are identical to the main project.
+- Skills use `update_plan` and local shell inspection rather than schema-driven chat payloads.
 
 ---
 

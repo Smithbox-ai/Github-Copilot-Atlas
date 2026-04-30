@@ -34,3 +34,6 @@ Use this for code and implementation review. For pre-execution plan review, use 
 - `references/evidence-discipline.md`
 - `references/review-checklist.md`
 - `references/validation-status.md`
+- `references/security-review-discipline.md`
+- `../controlflow-orchestration/references/tdd-patterns.md`
+- `../controlflow-planning/references/llm-behavior-guidelines.md`

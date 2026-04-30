@@ -13,7 +13,7 @@ Simulate the plan as if a fresh agent had only the saved artifact and the reposi
 
 1. Read the saved plan artifact first.
 2. Simulate only the first few phases or tasks that matter for cold-start execution.
-3. For each task, apply an 8-point checklist:
+3. For each task, apply an 8-point checklist from [references/executability-checklist.md](references/executability-checklist.md):
    - what_clear
    - where_clear
    - how_clear
@@ -22,7 +22,7 @@ Simulate the plan as if a fresh agent had only the saved artifact and the reposi
    - dependencies_met
    - verify_command_complete
    - test_specifics_concrete
-4. Walk through the task mentally:
+4. Walk through the task using the TDD walk-through from [references/executability-checklist.md](references/executability-checklist.md):
    - open_file
    - read_existing_code
    - write_test_red
@@ -56,4 +56,5 @@ Simulate the plan as if a fresh agent had only the saved artifact and the reposi
 
 ## References
 
+- `references/executability-checklist.md`
 - `../../templates/executability-verifier-report-template.md`

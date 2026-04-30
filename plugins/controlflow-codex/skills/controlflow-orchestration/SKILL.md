@@ -51,3 +51,5 @@ Run a plan with explicit state, disciplined gates, bounded retries, and mandator
 - `references/runtime-policy.json`
 - `references/failure-taxonomy.md`
 - `references/phase-checklist.md`
+- `references/tdd-patterns.md`
+- `../controlflow-planning/references/llm-behavior-guidelines.md`

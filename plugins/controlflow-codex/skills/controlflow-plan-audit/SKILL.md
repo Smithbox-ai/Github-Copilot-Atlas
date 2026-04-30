@@ -57,3 +57,5 @@ Review a saved plan before implementation begins. This skill is the Codex analog
 
 - `references/audit-checklist.md`
 - `../../templates/plan-audit-report-template.md`
+- `../controlflow-review/references/security-review-discipline.md`
+- `../controlflow-planning/references/llm-behavior-guidelines.md`

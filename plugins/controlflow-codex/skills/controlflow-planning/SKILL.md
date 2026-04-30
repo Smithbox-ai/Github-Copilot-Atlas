@@ -53,3 +53,4 @@ Turn a fuzzy or risky coding request into a durable, execution-ready plan for Co
 - `references/semantic-risk-taxonomy.md`
 - `references/controlflow-portability.md`
 - `references/planner-output-contract.md`
+- `references/llm-behavior-guidelines.md`
