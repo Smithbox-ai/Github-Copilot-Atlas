@@ -171,6 +171,20 @@ Before every `agent/runSubagent` call, regardless of dispatch context, apply thi
 
 This rule covers all dispatch paths without exception: Plan Review Gate reviewers (PlanAuditor, AssumptionVerifier, ExecutabilityVerifier), phase CodeReviewer dispatch, final CodeReviewer dispatch, needs_replan Planner dispatch, and Implementation Loop executor dispatch.
 
+### Dispatch Tool-Call Contract (Required Fields)
+
+Every `agent/runSubagent` call must include these outer tool-call fields:
+- **`agentName`** — the verified target-agent field (string). Placing the agent name only inside prompt prose or a delegation payload is non-compliant.
+- **`model`** — the resolved primary model string from the Universal Model Resolution Rule. Never omit.
+- **Prompt/context payload** — scope, deliverables, and relevant context references.
+
+#### Capable-Reviewer Model Routing
+
+For `CodeReviewer-subagent`, `PlanAuditor-subagent`, and `AssumptionVerifier-subagent` (role: `capable-reviewer`):
+- **Primary dispatch:** use `Claude Opus 4.7 (copilot)` when available.
+- **`model_unavailable` first retry:** use configured first fallback `GPT-5.5 (copilot)` for the same target agent and same tier. `Claude Sonnet 4.6 (copilot)` must not be used as a silent fallback for capable-reviewer agents or their first fallback retries.
+- `ExecutabilityVerifier-subagent` is an intentional exception: it resolves through `review-readonly` to `Claude Sonnet 4.6 (copilot)` and is not subject to capable-reviewer fallback routing.
+
 ### Initial Planner Dispatch Gate
 
 **Trigger:** When the user asks Orchestrator to plan or implement a task, and Orchestrator has no existing `plan_path`, no active plan artifact, and no approved in-memory plan to continue.

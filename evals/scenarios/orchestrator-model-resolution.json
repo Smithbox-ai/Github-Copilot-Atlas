@@ -7,6 +7,8 @@
     "routing_source": "governance/model-routing.json",
     "resolution_rule_source": "docs/agent-engineering/MODEL-ROUTING.md",
     "offline_eval_limitation": "No live agent/runSubagent invocation occurs during offline evals, so the harness cannot verify which model parameter is passed at runtime.",
+    "verified_target_agent_field": "agentName",
+    "verified_target_agent_field_evidence": "VS Code Insiders build 7e4091cc0c, resources/app/out/vs/workbench/api/worker/extensionHostWorkerMain.js ~pos 1502074: RunSubagentTool.getToolData() defines o.agentName={type:'string',description:'Name of the agent to invoke.'} and o.model={type:'string',description:'Optional model for the subagent...'}. Invoke path at ~pos 1502836 extracts x=s.agentName confirming the field name. This is the authoritative source; no guessing of agentName was required.",
     "reference_cases": [
       {
         "case_id": "capable-implementer-trivial-override",
@@ -29,6 +31,48 @@
           "resolved_primary_model": "Claude Opus 4.7 (copilot)",
           "live_runtime_assertion": false
         }
+      },
+      {
+        "case_id": "capable-reviewer-primary-dispatch",
+        "executor_agents": ["CodeReviewer-subagent", "PlanAuditor-subagent", "AssumptionVerifier-subagent"],
+        "complexity_tier": "MEDIUM",
+        "role": "capable-reviewer",
+        "resolution_mode": "inherit_from default",
+        "dispatch_context": "Initial dispatch when primary model is available. Orchestrator calls agent/runSubagent with agentName=<exact-agent-name> and model=<resolved-primary>.",
+        "reference_expectation": {
+          "resolved_primary_model": "Claude Opus 4.7 (copilot)",
+          "agentName_field_used": "agentName",
+          "live_runtime_assertion": false
+        }
+      },
+      {
+        "case_id": "capable-reviewer-model-unavailable-first-retry",
+        "executor_agents": ["CodeReviewer-subagent", "PlanAuditor-subagent", "AssumptionVerifier-subagent"],
+        "complexity_tier": "MEDIUM",
+        "role": "capable-reviewer",
+        "resolution_mode": "model_unavailable first retry — fallbacks[0]",
+        "dispatch_context": "First retry after primary Claude Opus 4.7 (copilot) is unavailable. Orchestrator resolves fallbacks[0] from governance/model-routing.json roles.capable-reviewer.fallbacks. Must NOT silently use Orchestrator frontmatter Claude Sonnet 4.6 (copilot).",
+        "reference_expectation": {
+          "first_retry_model": "GPT-5.5 (copilot)",
+          "first_retry_model_source": "governance/model-routing.json roles.capable-reviewer.fallbacks[0]",
+          "must_not_use_orchestrator_sonnet_default": true,
+          "agentName_field_used": "agentName",
+          "live_runtime_assertion": false
+        }
+      },
+      {
+        "case_id": "executability-verifier-review-readonly-sonnet",
+        "executor_agent": "ExecutabilityVerifier-subagent",
+        "complexity_tier": "LARGE",
+        "role": "review-readonly",
+        "resolution_mode": "inherit_from default",
+        "dispatch_context": "Intentional exception: ExecutabilityVerifier resolves through review-readonly role, not capable-reviewer. Its primary model is Claude Sonnet 4.6 (copilot). This is correct behavior and must be preserved.",
+        "reference_expectation": {
+          "resolved_primary_model": "Claude Sonnet 4.6 (copilot)",
+          "role_is_review_readonly_not_capable_reviewer": true,
+          "agentName_field_used": "agentName",
+          "live_runtime_assertion": false
+        }
       }
     ]
   },
@@ -37,6 +81,6 @@
     "offline_harness_observes_live_runSubagent_model_parameters": false,
     "live_runtime_behavior_out_of_scope": true,
     "behavioral_runtime_assertions_present": false,
-    "reference_cases_documented": 2
+    "reference_cases_documented": 5
   }
 }

@@ -13,7 +13,7 @@ The following agents are available for Orchestrator phase dispatch. The `executo
 | PlatformEngineer-subagent | Infrastructure | CI/CD, containers, deployment | Capable model (Sonnet) |
 | TechnicalWriter-subagent | Documentation | Docs, diagrams, walkthroughs | Capable model (Sonnet) |
 | BrowserTester-subagent | E2E testing | Browser tests, accessibility audits | Capable model (Sonnet) |
-| CodeReviewer-subagent | Post-impl verification | Code review, quality gates | Capable model (Sonnet) |
+| CodeReviewer-subagent | Post-impl verification | Code review, quality gates | Premium capable-reviewer (Opus/GPT-5.5) |
 
 **Note:** Optional Final Review Gate (Completion Gate sub-step) — activated for LARGE tier (auto) or on user request; dispatches CodeReviewer with review_scope=final; policy flag: governance/runtime-policy.json#final_review_gate
 
@@ -23,9 +23,9 @@ The following agents are dispatched by Orchestrator specifically during the PLAN
 
 | Agent | Role | Primary Use Case | Model Recommendation |
 | --- | --- | --- | --- |
-| PlanAuditor-subagent | Pre-impl plan audit | Architecture, security, risk review | Read-only capable model |
-| AssumptionVerifier-subagent | Mirage detection | Assumption verification, hallucination hunting | Read-only capable model |
-| ExecutabilityVerifier-subagent | Executability verification | Cold-start plan simulation | Read-only capable model |
+| PlanAuditor-subagent | Pre-impl plan audit | Architecture, security, risk review | Premium capable-reviewer (Opus/GPT-5.5) |
+| AssumptionVerifier-subagent | Mirage detection | Assumption verification, hallucination hunting | Premium capable-reviewer (Opus/GPT-5.5) |
+| ExecutabilityVerifier-subagent | Executability verification | Cold-start plan simulation | Read-only capable model (Sonnet) |
 
 *Note: `PlanAuditor-subagent`, `AssumptionVerifier-subagent`, and `ExecutabilityVerifier-subagent` are strictly review-only agents. They are dispatched by Orchestrator during the PLAN_REVIEW lifecycle and must NOT appear as `executor_agent` values in Planner plan phases. The `executor_agent` enum in `schemas/planner.plan.schema.json` enforces this exclusion.*
 

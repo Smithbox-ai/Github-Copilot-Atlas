@@ -12,6 +12,38 @@ Archive old entries when the log exceeds 50 entries (see `plans/templates/sessio
 
 ## Entry
 
+**Plan ID:** `orchestrator-review-model-routing-fix-plan-revised-v2`  
+**Date:** `2026-05-01`  
+**Complexity Tier:** `MEDIUM`  
+**Total Phases:** `4 / 4`  
+
+### Review Pipeline
+
+| Agent | Result | Notes |
+|---|---|---|
+| AssumptionVerifier-subagent | COMPLETE | Iteration 2 approved after the target-agent field and fallback assumptions were gated by evidence |
+| PlanAuditor-subagent | APPROVED | Iteration 2 approved the revised plan; MEDIUM tier, no ExecutabilityVerifier required |
+| ExecutabilityVerifier-subagent | N/A | MEDIUM tier - not in scope per `governance/runtime-policy.json` |
+| CodeReviewer-subagent | APPROVED | Phases 1-4 approved; validated blocking issues: 0 at completion; full `cd evals && npm test` passed |
+
+**Total review iterations:** `2` / `5`  
+**Convergence:** `Converged`  
+
+### Outcome
+
+**Status:** `SUCCESS`  
+**CodeReviewer false positive rate:** `0 / 1` (`0%`)  
+
+### Lessons Learned
+
+1. Runtime model routing tests should derive expected primary and fallback values from `governance/model-routing.json`, not duplicate model strings in assertions.
+2. `model_unavailable` handling must select the configured role fallback and must not silently inherit the parent agent's frontmatter model.
+3. Plan revisions that intentionally share active plan surfaces need a scoped `shared_anchor_map` before the full eval suite can pass Pass 10.
+
+---
+
+## Entry
+
 **Plan ID:** `repo-health-traceability-plan-v5`  
 **Date:** `2026-04-25`  
 **Complexity Tier:** `MEDIUM`  

@@ -72,9 +72,9 @@ When Orchestrator or Planner dispatch a subagent via `agent/runSubagent`, they a
 1. They load `governance/model-routing.json`.
 2. They look up the target agent in `agent_role_index`.
 3. They apply the `by_tier` complexity rule to determine the required model string.
-4. They pass the resolved `primary` model explicitly as the `model` parameter to `agent/runSubagent`, overriding the agent's frontmatter at call time.
+4. They pass the resolved `primary` explicitly as the `model` parameter to `agent/runSubagent`, and MUST supply the verified target-agent field `agentName` at the tool-call boundary, overriding the agent's frontmatter at call time.
 
-While global VS Code Copilot execution (e.g., triggering an agent directly from chat) still relies on the frontmatter fallback, all internal orchestrated pipeline dispatches strictly enforce the logical routing graph dynamically.
+While global VS Code Copilot execution (e.g., triggering an agent directly from chat) still relies on the frontmatter fallback, all internal orchestrated pipeline dispatches strictly enforce the logical routing graph dynamically. It is important to note that offline evals do not prove live `runSubagent` execution; we distinguish structural tests and tool/API-shape evidence from real live subagent dispatch (as proven by the existing model override spike).
 
 ## Matrix shape (Stage C/D)
 
@@ -134,7 +134,9 @@ These tiers are advisory and intended to inform future cost-aware routing (Phase
 - The first fallback is typically a **same-family** alternative (e.g., Claude Sonnet 4.6 → Claude Opus 4.7) preserving prompt compatibility.
 - The second is a **cross-family** alternative (e.g., Claude → GPT) accepting potentially larger behavior shifts in exchange for availability.
 
-Fallback resolution is **not** runtime-enforced today; the list documents the intended chain so future routing logic can implement it deterministically without re-deriving safe substitutions.
+For the `capable-reviewer` role (used by CodeReviewer, PlanAuditor, and AssumptionVerifier), the primary model is `Claude Opus 4.7` when available. If model unavailable, the first fallback retry uses `GPT-5.5`. The Orchestrator's frontmatter model (`Claude Sonnet 4.6`) MUST NOT be used as a silent fallback for these agents, to ensure premium rigorous review. However, `ExecutabilityVerifier-subagent` is preserved as an intentional `review-readonly` Sonnet route to run cheaper cold-start simulations.
+
+While the Orchestrator prompt contract now enforces this specific `capable-reviewer` first fallback retry to `GPT-5.5` on `model_unavailable`, generic fallback-list automation (passing an array of fallbacks for runtime execution) is **not** runtime-enforced today and remains future scope. The `fallbacks` list simply documents the intended chain so future routing logic can implement it deterministically without re-deriving safe substitutions. (Note: offline evals structurally validate these contracts but do not constitute live runtime proof of fallback execution.)
 
 ## Reasoning Effort Hint (Advisory)
 

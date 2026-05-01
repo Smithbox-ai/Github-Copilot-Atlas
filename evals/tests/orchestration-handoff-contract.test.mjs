@@ -18,6 +18,51 @@ import { fileURLToPath } from 'url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..', '..');
 
+// ──────────────────────────────────────────────
+// Model routing resolver — source-of-truth helper
+// Derives expected model values from governance/model-routing.json
+// instead of hard-coding model names in assertions.
+// ──────────────────────────────────────────────
+const modelRouting = JSON.parse(
+  readFileSync(join(ROOT, 'governance', 'model-routing.json'), 'utf8')
+);
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Resolve the effective { primary, fallbacks } for a role+tier.
+ * Handles inherit_from: "default" by falling back to the role's top-level values.
+ */
+function resolveRoleModel(role, tier) {
+  const roleDef = modelRouting.roles[role];
+  if (!roleDef) return { primary: null, fallbacks: [] };
+  const byTier = roleDef.by_tier?.[tier] ?? {};
+  if (byTier.inherit_from === 'default' || (!byTier.primary && !byTier.fallbacks)) {
+    return { primary: roleDef.primary, fallbacks: roleDef.fallbacks ?? [] };
+  }
+  return {
+    primary: byTier.primary ?? roleDef.primary,
+    fallbacks: byTier.fallbacks ?? roleDef.fallbacks ?? [],
+  };
+}
+
+// Agent → role index for the four review agents
+const agentRoleIndex = {
+  'CodeReviewer-subagent':          'capable-reviewer',
+  'PlanAuditor-subagent':           'capable-reviewer',
+  'AssumptionVerifier-subagent':    'capable-reviewer',
+  'ExecutabilityVerifier-subagent': 'review-readonly',
+};
+
+// Pre-resolved values used in assertions (derived from governance/model-routing.json)
+const _capableReviewer       = resolveRoleModel('capable-reviewer', 'MEDIUM');
+const capableReviewerPrimary  = _capableReviewer.primary;       // e.g. Claude Opus 4.7 (copilot)
+const capableReviewerFallback0 = _capableReviewer.fallbacks[0]; // e.g. GPT-5.5 (copilot)
+const orchestratorDefaultPrimary = resolveRoleModel('orchestration-capable', 'MEDIUM').primary; // e.g. Claude Sonnet 4.6 (copilot)
+const evPrimary = resolveRoleModel(agentRoleIndex['ExecutabilityVerifier-subagent'], 'LARGE').primary; // e.g. Claude Sonnet 4.6 (copilot)
+
 let passed = 0;
 let failed = 0;
 
@@ -607,6 +652,161 @@ check(
   'Initial dispatch scenario: model resolution uses top-level primary when no complexity_tier exists',
   initialDispatchScenario.expected?.model_resolution_before_tier !== undefined &&
   initialDispatchScenario.expected?.model_resolution_before_tier === 'top_level_primary'
+);
+
+// ══════════════════════════════════════════════
+// Phase 1 — Dispatch API Shape and RED Review Model Coverage
+//
+// Evidence: VS Code Insiders build 7e4091cc0c,
+//   resources/app/out/vs/workbench/api/worker/extensionHostWorkerMain.js
+//   pos ~1502074: RunSubagentTool.getToolData() defines the inputSchema:
+//     o.agentName = { type:"string", description:"Name of the agent to invoke." }
+//     o.model = { type:"string", description:'Optional model for the subagent. Format: "Model Name (Vendor)"...' }
+//   pos ~1502836: RunSubagentTool.invoke() extracts: x = s.agentName
+//
+// Verified target-agent field: agentName (not "agent_name", "target", or any other variant)
+// Verified model-override field: model
+//
+// The following checks enforce that Orchestrator uses the verified `agentName` field
+// for review dispatches and applies correct capable-reviewer model routing.
+// These checks are intentionally RED until Phase 2 is implemented.
+// ══════════════════════════════════════════════
+console.log('\n=== Orchestrator — Dispatch API Shape (Phase 1 RED checks) ===');
+
+check(
+  // RED until Phase 2: Orchestrator must name agentName as the tool-call field
+  // Evidence: agentName verified from extensionHostWorkerMain.js RunSubagentTool.getToolData()
+  'Dispatch contract: Orchestrator documents agentName as the agent/runSubagent target-agent field [RED — Phase 2 required]',
+  /agentName/i.test(orch)
+);
+
+check(
+  // RED until Phase 2: agentName must not appear only in prose — it must be in the dispatch contract
+  'Dispatch contract: agentName field referenced in the Universal Model Resolution Rule or dispatch contract section [RED — Phase 2 required]',
+  /Universal Model Resolution Rule[\s\S]{0,1200}agentName|agentName[\s\S]{0,400}Universal Model Resolution Rule|dispatch.*tool.call.*contract[\s\S]{0,400}agentName|agentName[\s\S]{0,400}dispatch.*tool.call.*contract/i.test(orch)
+);
+
+check(
+  // RED until Phase 2: capable-reviewer primary must be stated for CodeReviewer, PlanAuditor, AssumptionVerifier
+  // Derived from governance/model-routing.json roles.capable-reviewer.primary
+  `Review dispatch: capable-reviewer primary model ${capableReviewerPrimary} stated for CodeReviewer/PlanAuditor/AssumptionVerifier [RED — Phase 2 required]`,
+  new RegExp(escapeRegex(capableReviewerPrimary), 'i').test(orch)
+);
+
+check(
+  // RED until Phase 2: first model_unavailable retry for capable-reviewer uses fallbacks[0], not Sonnet
+  // Derived from governance/model-routing.json roles.capable-reviewer.fallbacks[0]
+  `Review dispatch: model_unavailable first retry for capable-reviewer uses ${capableReviewerFallback0} [RED — Phase 2 required]`,
+  new RegExp(
+    `model_unavailable[\\s\\S]{0,600}${escapeRegex(capableReviewerFallback0)}` +
+    `|${escapeRegex(capableReviewerFallback0)}[\\s\\S]{0,200}model_unavailable[\\s\\S]{0,200}capable.reviewer` +
+    `|capable.reviewer[\\s\\S]{0,300}model_unavailable[\\s\\S]{0,200}${escapeRegex(capableReviewerFallback0)}`,
+    'i'
+  ).test(orch)
+);
+
+check(
+  // RED until Phase 2: Orchestrator must state that its frontmatter default must NOT
+  // be silently substituted for capable-reviewer dispatches or first fallback retries
+  // Derived from governance/model-routing.json roles.orchestration-capable.primary
+  `Review dispatch: ${orchestratorDefaultPrimary} must not be silent fallback for capable-reviewer agents [RED — Phase 2 required]`,
+  new RegExp(
+    `${escapeRegex(orchestratorDefaultPrimary)}[\\s\\S]{0,300}must not.*silent.*fallback` +
+    `|must not.*silent.*fallback[\\s\\S]{0,300}capable.reviewer` +
+    `|never.*silently.*use.*${escapeRegex(orchestratorDefaultPrimary)}[\\s\\S]{0,200}capable.reviewer` +
+    `|capable.reviewer[\\s\\S]{0,200}never.*silently.*use.*${escapeRegex(orchestratorDefaultPrimary)}`,
+    'i'
+  ).test(orch)
+);
+
+check(
+  // SHOULD PASS (ExecutabilityVerifier intentional Sonnet route is already present in Orchestrator
+  // via Universal Model Resolution Rule; this check verifies the rule hasn't regressed)
+  // This check is GREEN — it validates the existing rule covers ExecutabilityVerifier.
+  // If it fails, that is a regression from Phase 2 work, not a Phase 1 defect.
+  'Review dispatch: ExecutabilityVerifier review-readonly Sonnet route preserved via Universal Model Resolution Rule [should remain GREEN]',
+  /Universal Model Resolution Rule[\s\S]{0,800}ExecutabilityVerifier|This rule covers all dispatch paths[\s\S]{0,400}ExecutabilityVerifier/i.test(orch)
+);
+
+// ──────────────────────────────────────────────
+// Scenario fixture: capable-reviewer and review-readonly model routing reference cases
+// ──────────────────────────────────────────────
+console.log('\n=== Orchestrator — Review Model Routing Scenario ===');
+
+const modelResScenario = JSON.parse(
+  readFileSync(join(ROOT, 'evals', 'scenarios', 'orchestrator-model-resolution.json'), 'utf8')
+);
+
+// All cases must remain reference-only (Phase 1 plan requirement 6)
+const allCases = modelResScenario.input?.reference_cases ?? [];
+
+check(
+  'Model resolution scenario: offline_harness_observes_live_runSubagent_model_parameters is false',
+  modelResScenario.expected?.offline_harness_observes_live_runSubagent_model_parameters === false
+);
+
+check(
+  'Model resolution scenario: verified target-agent field is documented as agentName in scenario metadata',
+  modelResScenario.input?.verified_target_agent_field === 'agentName'
+);
+
+const reviewPrimaryCase = allCases.find(c => c.case_id === 'capable-reviewer-primary-dispatch');
+check(
+  'Model resolution scenario: capable-reviewer-primary-dispatch case exists',
+  reviewPrimaryCase !== undefined
+);
+check(
+  // Derived from governance/model-routing.json roles.capable-reviewer.primary
+  `Model resolution scenario: capable-reviewer-primary-dispatch uses ${capableReviewerPrimary}`,
+  reviewPrimaryCase?.reference_expectation?.resolved_primary_model === capableReviewerPrimary
+);
+check(
+  'Model resolution scenario: capable-reviewer-primary-dispatch live_runtime_assertion is false',
+  reviewPrimaryCase?.reference_expectation?.live_runtime_assertion === false
+);
+
+const fallbackCase = allCases.find(c => c.case_id === 'capable-reviewer-model-unavailable-first-retry');
+check(
+  'Model resolution scenario: capable-reviewer-model-unavailable-first-retry case exists',
+  fallbackCase !== undefined
+);
+check(
+  // Derived from governance/model-routing.json roles.capable-reviewer.fallbacks[0]
+  `Model resolution scenario: first retry for capable-reviewer uses ${capableReviewerFallback0}`,
+  fallbackCase?.reference_expectation?.first_retry_model === capableReviewerFallback0
+);
+check(
+  // Derived from governance/model-routing.json roles.orchestration-capable.primary
+  `Model resolution scenario: first retry must not use ${orchestratorDefaultPrimary}`,
+  fallbackCase?.reference_expectation?.first_retry_model !== orchestratorDefaultPrimary
+);
+check(
+  'Model resolution scenario: first retry live_runtime_assertion is false',
+  fallbackCase?.reference_expectation?.live_runtime_assertion === false
+);
+
+const evCase = allCases.find(c => c.case_id === 'executability-verifier-review-readonly-sonnet');
+check(
+  'Model resolution scenario: executability-verifier-review-readonly-sonnet case exists',
+  evCase !== undefined
+);
+check(
+  // Derived from governance/model-routing.json roles.review-readonly.primary
+  `Model resolution scenario: ExecutabilityVerifier resolves through review-readonly to ${evPrimary}`,
+  evCase?.reference_expectation?.resolved_primary_model === evPrimary
+);
+check(
+  'Model resolution scenario: ExecutabilityVerifier role is review-readonly (intentional exception)',
+  evCase?.role === 'review-readonly'
+);
+check(
+  'Model resolution scenario: ExecutabilityVerifier live_runtime_assertion is false',
+  evCase?.reference_expectation?.live_runtime_assertion === false
+);
+
+check(
+  'Model resolution scenario: total reference_cases_documented matches array length',
+  modelResScenario.expected?.reference_cases_documented === allCases.length
 );
 
 // ──────────────────────────────────────────────
